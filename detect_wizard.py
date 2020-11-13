@@ -120,55 +120,8 @@ json_splitter_actionable = Actionable("Scanfile Splitter", {'sensitivity > 1 and
 license_search_actionable = Actionable("License Search", {'scan_focus == "l"':
                                                               ("detect.blackduck.signature.scanner.license.search=true", 'License search WILL be used.')},
                                        default_description="License search will NOT be used. ")
-
-sig_scan_thresholds = {'enable_disable': ("<", 2),
-                       'individual_file_match': (">", 7),
-                       'file_snippet_match': (">", 9),
-                       'binary_matching': (">", 7),
-                       'dir_dups': ("=", 1),
-                       'detector_search_depth': (("<=", 3), ((">", 3), (">=", 7))),
-                       'detector_exclusion': ("<", 4),
-                       'buildless': (">", 3),
-                       'dev_deps': (">", 2),
-                       'detect_docker_tar': (">", 4),
-                       'json_splitter': (">", 2)
-                       }
-
-def test_sensitivity(op_val_pair: tuple):
-    global args
-    cmp_op, val = op_val_pair
-    if cmp_op == '>':
-        return args.sensitivity > val
-    elif cmp_op == '<':
-        return args.sensitivity < val
-    elif cmp_op == '>=':
-        return args.sensitivity >= val
-    elif cmp_op == '<=':
-        return args.sensitivity <= val
-    elif cmp_op == "=" or cmp_op == "==":
-        return args.sensitivity == val
-    elif cmp_op == "!=":
-        return args.sensitivity != val
-    else:
-        raise ValueError("{} is not a valid value for sensitivity comparison".format(op_val_pair))
-
-
-def invert_op(op_val_pair: tuple):
-    op, val = op_val_pair
-    if op == "!=":
-        return "==", val
-    elif op == "==" or op == "=":
-        return "!=", val
-    elif op == "<=":
-        return ">", val
-    elif op == ">=":
-        return "<", val
-    elif op == ">":
-        return "<=", val
-    elif op == "<":
-        return ">=", val
-
 wl = WizardLogger()
+
 detectors_file_dict = {
 'build.env': ['bitbake'],
 'cargo.toml': ['cargo'],
@@ -1255,37 +1208,10 @@ def signature_process(folder, f):
     result = indiv_file_match_actionable.test(sensitivity=args.sensitivity)
     if result.outcome != "NO-OP":
         c.str_add('scan', result.outcome)
-    indiv_file_thresh = sig_scan_thresholds['individual_file_match']
-    if test_sensitivity(indiv_file_thresh):
-        cli_msgs_dict['scan'] += "--detect.blackduck.signature.scanner.individual.file.matching=SOURCE\n"
-        wl.log("Individual File Matching", "sensitivity {} {}".format(*indiv_file_thresh),
-               "--detect.blackduck.signature.scanner.individual.file.matching=SOURCE",
-               "Individual File Matching (SOURCE) is ENABLED")
-    else:
-        wl.log("Individual File Matching", "sensitivity {} {}".format(*invert_op(indiv_file_thresh)),
-               "--detect.blackduck.signature.scanner.individual.file.matching={UNSET}",
-               "Individual File Matching (SOURCE) is DISABLED")
 
     result = file_snippet_match_actionable.test(sensitivity=args.sensitivity, scan_focus=args.focus)
     if result.outcome != "NO-OP":
         c.str_add('scan', result.outcome)
-    snippet_thresh = sig_scan_thresholds['file_snippet_match']
-    if test_sensitivity(snippet_thresh):
-        if args.focus != 's':
-
-            cli_msgs_dict['scan'] += "--detect.blackduck.signature.scanner.snippet.matching=SNIPPET_MATCHING\n"
-
-            wl.log("Snippet Matching", ["sensitivity {} {}".format(*snippet_thresh), "scan focus != security only"],
-                   "--detect.blackduck.signature.scanner.snippet.matching=SNIPPET_MATCHING",
-                                   "Snippet Matching is ENABLED")
-        else:
-            wl.log("Snippet Matching", "scan focus == security only",
-                   "--detect.blackduck.signature.scanner.snippet.matching={UNSET}",
-                   "Snippet Matching is DISABLED")
-    else:
-        wl.log("Snippet Matching", "sensitivity {} {}".format(*invert_op(snippet_thresh)),
-               "--detect.blackduck.signature.scanner.snippet.matching={UNSET}",
-                               "Snippet Matching is DISABLED")
 
     print(" Done")
     print("")
@@ -1837,7 +1763,7 @@ def get_detector_search_depth():
     # TODO: we need defined behaviour for all sensitivities for detector search depth
 
     result = detector_search_depth_actionable.test(sensitivity=args.sensitivity)
-    if result is not None and result != "NO-OP":
+    if result is not None and result.outcome != "NO-OP":
         cli_msgs_dict['scan'] += "detect.detector.search.depth: {}\n".format(result.outcome)
         cli_msgs_dict['scan'] += "detect.detector.search.continue: true\n"
         c.str_add('scan', "detect.detector.search.depth: {}".format(result.outcome), is_commented=False)
@@ -1971,6 +1897,7 @@ def uncomment_min_required_options(data, start_index, end_index):
 
 def uncomment_improve_scan_coverage_options(data, start_index, end_index):
     individual_file_matching_uncommented = False
+    get_detector_search_depth()
     for line in data[start_index:end_index]:
         # TODO IS THIS THE WAY IT SHOULD BE? that we don't get the chance to set this?
         if 'detect.detector.search.depth' in line and get_detector_search_depth():

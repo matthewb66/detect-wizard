@@ -111,6 +111,8 @@ def parse_and_replace_action_vars(action, vars_dict: dict):
         action_vars = re.findall("\\${([a-zA-Z-0-9_]+)}", action)
         if action_vars is not None:
             for var_name in action_vars:
+                if var_name == "OUT":
+                    continue
                 result = vars_dict[var_name]
                 if callable(result):
                     return result
@@ -141,6 +143,7 @@ class Actionable(object):
                     if type(result) == list:
                         result = "\n".join(result)
                     desc = desc.replace("${OUT}", str(result))
+                    outcome = result
                 value_action = Actionable.Output(outcome=outcome, causes=v[1], description=desc)
                 true_count += 1
             else:
