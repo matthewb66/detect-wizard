@@ -2076,18 +2076,18 @@ def run_detect(config_file):
     p = subprocess.Popen(detect_command, shell=True, executable='/bin/bash',
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout = p.stdout
-    out_file = open('latest_detect_run.txt', "w+")
-    out_file.write(wl.make_table())
-    rc = None
-    while True:
-        std_out_output = stdout.readline()
-        if (std_out_output == '' and (rc := p.poll()) is not None) or re.findall(r'Result code of [0-9]*, exiting', std_out_output.decode('utf-8')):
-            break
-        if std_out_output:
-            out_file.write(std_out_output.decode('utf-8'))
-            print(std_out_output.decode('utf-8').strip())
-    file_contents = out_file.read()
-    print(rc)
+    with open('latest_detect_run.txt', "w+") as out_file:
+        out_file.write(wl.make_table())
+        while True:
+            std_out_output = stdout.readline()
+            if std_out_output == '' or re.findall(r'Result code of [0-9]*, exiting', std_out_output.decode('utf-8')):
+                break
+            if std_out_output:
+                out_file.write(std_out_output.decode('utf-8'))
+                print(std_out_output.decode('utf-8').strip())
+
+    with open('latest_detect_run.txt', "r") as out_file:
+        file_contents = out_file.read()
 
     detect_status = re.search(r'Overall Status: (.*)\n', file_contents)
     bom_location = re.search(r'Black Duck Project BOM: (.*)\n', file_contents)
@@ -2128,7 +2128,7 @@ def run_detect(config_file):
             print("Output directory could not be located. Dry run and BDIO files were not uploaded.")
 
 
-    print("Detect logs written to: {}".format(out_file))
+    print("Detect logs written to: {}".format(out_file.name))
     if detect_status:
         print("Detect run complete. Overall status: {}".format(detect_status.group(1)))
     else:
