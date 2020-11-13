@@ -1885,6 +1885,7 @@ def get_detector_exclusion_args():
             cli_msgs_dict['size'] += "{}\n".format(result.outcome)
             c.str_add('size', result.outcome)
 
+
     # if args.sensitivity < 4:
     #     detector_exclusions = ['*test*', '*samples*', '*examples*']
     #     gradle_paths = []
@@ -2153,7 +2154,7 @@ def run_detect(config_file):
     rc = None
     while True:
         std_out_output = stdout.readline()
-        if std_out_output == '' and (rc := p.poll()) is not None:
+        if (std_out_output == '' and (rc := p.poll()) is not None) or re.findall(r'Result code of [0-9]*, exiting', std_out_output.decode('utf-8')):
             break
         if std_out_output:
             out_file.write(std_out_output.decode('utf-8'))
