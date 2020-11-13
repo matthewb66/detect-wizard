@@ -176,7 +176,7 @@ class Configuration(object):
         return prop_list
 
     def uncomment_property(self, property_name, assert_value=None):
-        if result := self.get_prop(property_name) is not None:
+        if (result := self.get_prop(property_name)) is not None:
             if assert_value is not None and result.value != assert_value:
                 return False
             else:
