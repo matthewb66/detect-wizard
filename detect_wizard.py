@@ -2104,9 +2104,9 @@ def uncomment_detect_commands(config_file):
     data = uncomment_min_required_options(data, min_req_idx+1, next(item for item in indices if item is not None)-1)
     uncomment_line_from_data(data, "detect.docker.tar")
     c.uncomment_property('detect.docker.tar')
-    if args.hub_project is not None:
+    if args.hub_project is not None and args.hub_project != "None":
         c.str_add('proj', 'detect.project.name: \'{}\''.format(args.hub_project), should_update=True)
-    if args.hub_version is not None:
+    if args.hub_version is not None and args.hub_version != "None":
         c.str_add('proj', 'detect.project.version.name: \'{}\''.format(args.hub_version), should_update=True)
 
     if improve_scan_coverage_idx:
