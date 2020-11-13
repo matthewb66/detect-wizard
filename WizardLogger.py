@@ -1,4 +1,4 @@
-from tabulate import tabulate
+import texttable
 
 
 class WizardLogger(object):
@@ -25,11 +25,17 @@ class WizardLogger(object):
                         data_rows.append([topic, ', '.join(cause), outcome, description])
                     else:
                         data_rows.append(["", ', '.join(cause), outcome, description])
+        table_pos = texttable.Texttable(max_width=120)
+        table_pos.set_cols_align(["c", "c", "c", "c"])
+        table_pos.header(["Actionable", "Cause/Condition", "Outcome", "Description"])
+        table_pos.add_rows(data_rows, header=False)
+        table_pos = table_pos.draw()
 
-        table_pos = tabulate(data_rows, headers=("Actionable", "Cause/Condition", "Outcome", "Description"),
-                         tablefmt='pretty')
-        table_neg = tabulate(data_rows_no_op, headers=("Actionable", "Cause/Condition", "Outcome", "Description"),
-                             tablefmt='pretty')
+        table_neg = texttable.Texttable(max_width=120)
+        table_neg.set_cols_align(["c", "c", "c", "c"])
+        table_neg.header(["Actionable", "Cause/Condition", "Outcome", "Description"])
+        table_neg.add_rows(data_rows_no_op, header=False)
+        table_neg = table_neg.draw()
 
         table_width = max(table_pos.index('\n'), table_neg.index('\n'))
         title = " Sensitivity{} Manifest ".format("({})".format(sensitivity_value) if sensitivity_value is not None else "")
@@ -37,10 +43,3 @@ class WizardLogger(object):
         header_str = '-' * size + title + '-' * size
         footer_str = '-' * len(header_str) + "\n"
         return "{}\n{}\n{}{}\n{}".format(header_str, table_pos, footer_str, table_neg, footer_str)
-
-
-if __name__ == "__main__":
-    wl = WizardLogger()
-    wl.log("A", ["b", "c"], "af", "asf")
-
-    print(wl.make_table())
