@@ -325,7 +325,7 @@ counts = {
     'arc': [0, 0],
     'bin': [0, 0],
     'jar': [0, 0],
-    'src': [0, 0],
+    'detect_wizard_src': [0, 0],
     'det': [0, 0],
     'large': [0, 0],
     'huge': [0, 0],
@@ -341,7 +341,7 @@ sizes = {
     'arc': [0, 0, 0],
     'bin': [0, 0, 0],
     'jar': [0, 0, 0],
-    'src': [0, 0, 0],
+    'detect_wizard_src': [0, 0, 0],
     'det': [0, 0, 0],
     'large': [0, 0, 0],
     'huge': [0, 0, 0],
@@ -673,7 +673,7 @@ def checkfile(name, path, size, size_comp, dirdepth, in_archive, filebuff=None):
         ftype = 'det'
     elif ext in srcext_list:
         src_list.append(path)
-        ftype = 'src'
+        ftype = 'detect_wizard_src'
     elif ext in jarext_list:
         jar_list.append(path)
         ftype = 'jar'
@@ -1036,11 +1036,11 @@ def print_summary(critical_only, f):
                           trunc(b_to_mb(sizes['ignoredir'][inarccomp])))
 
     summary += row.format("Source Files", \
-                          counts['src'][notinarc], \
-                          trunc(b_to_mb(sizes['src'][notinarc])), \
-                          counts['src'][inarc], \
-                          trunc(b_to_mb(sizes['src'][inarcunc])), \
-                          trunc(b_to_mb(sizes['src'][inarccomp])))
+                          counts['detect_wizard_src'][notinarc], \
+                          trunc(b_to_mb(sizes['detect_wizard_src'][notinarc])), \
+                          counts['detect_wizard_src'][inarc], \
+                          trunc(b_to_mb(sizes['detect_wizard_src'][inarcunc])), \
+                          trunc(b_to_mb(sizes['detect_wizard_src'][inarccomp])))
 
     summary += row.format("JAR Archives", \
                           counts['jar'][notinarc], \
@@ -1175,7 +1175,7 @@ def signature_process(folder, f):
 
     #
     # Need to add check for nothing to scan (no supported scan files)
-    if counts['src'][notinarc] + counts['src'][inarc] + counts['jar'][notinarc] + counts['jar'][inarc] + \
+    if counts['detect_wizard_src'][notinarc] + counts['detect_wizard_src'][inarc] + counts['jar'][notinarc] + counts['jar'][inarc] + \
             counts['other'][notinarc] + counts['other'][inarc] == 0:
         recs_msgs_dict['info'] += "- INFORMATION: No source, jar or other files found\n".format(
             trunc((counts['file'][notinarc] + sizes['file'][inarc]))) + \

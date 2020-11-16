@@ -4,11 +4,11 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="detect_wizard",  # Replace with your own username
+    name="detect-wizard",
     version="1.0-Beta-10",
     author="Matthew Brady, Jay Ricco, Jaclyn Kaplan, Damon Weinstein",
     author_email="w3matt@gmail.com",
-    description="A wizard to run Synopsys Detect",
+    description="Black Duck scanning wizard to pre-scan folders, determine optimal scan configuration and call Synopsys Detect to scan",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/matthewb66/detect-wizard",
