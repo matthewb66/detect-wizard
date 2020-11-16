@@ -1,6 +1,6 @@
 import re
 from collections import namedtuple
-from WizardLogger import WizardLogger
+from detect_wizard_src.WizardLogger import WizardLogger
 
 
 def test_sensitivity(op_val_pair: tuple, sensitivity):

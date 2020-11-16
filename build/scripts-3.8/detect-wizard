@@ -1,0 +1,5 @@
+#!python
+
+from detect_wizard_src import detect_wizard
+
+detect_wizard.run()
