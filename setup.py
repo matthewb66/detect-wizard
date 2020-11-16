@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="detect-wizard",
+    name="detect_wizard",
     version="1.0-Beta-10",
     author="Matthew Brady, Jay Ricco, Jaclyn Kaplan, Damon Weinstein",
     author_email="w3matt@gmail.com",
