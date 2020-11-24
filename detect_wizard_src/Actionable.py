@@ -4,7 +4,6 @@ from detect_wizard_src.WizardLogger import WizardLogger
 
 
 def test_sensitivity(op_val_pair: tuple, sensitivity):
-    global args
     cmp_op, val = op_val_pair
     if cmp_op == '>':
         return sensitivity > val
@@ -39,7 +38,7 @@ def invert_op(op_val_pair: tuple):
 
 
 def format_op_val_pair(op_val_pair: tuple):
-    return "sensitivity {} {}".format()
+    return "sensitivity {} {}".format(*op_val_pair)
 
 
 def format_value(val: str):
@@ -54,10 +53,9 @@ def format_value(val: str):
         return int(val)
     else:
         try:
-            return round(float(val), 2)
+            return round(float(val), 4)
         except ValueError:
             return val
-
 
 
 def parse_cause_actions(cause_action_dict: dict, vars_dict: dict):
@@ -153,7 +151,7 @@ class Actionable(object):
         Actionable.wl.log(topic=self.title, causes=value_action.causes, outcome=value_action.outcome, description=value_action.description)
         return value_action
 
-    def getTable(self, sensitivity_value):
+    def get_table(self, sensitivity_value):
         return Actionable.wl.make_table(sensitivity_value)
 
     def __str__(self):

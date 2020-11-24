@@ -2,6 +2,9 @@ import texttable
 
 
 class WizardLogger(object):
+    """
+    This class represents the logging interface for the variable sensitivity system.
+    """
     def __init__(self):
         self._log_dict = dict()
 
@@ -14,7 +17,7 @@ class WizardLogger(object):
         data_rows = []
         data_rows_no_op = []
         for topic, cod_list in self._log_dict.items():
-            for idx, (cause, outcome, description) in  enumerate(cod_list):
+            for idx, (cause, outcome, description) in enumerate(cod_list):
                 if outcome == "NO-OP":
                     if idx == 0:
                         data_rows_no_op.append([topic, ', '.join(cause), outcome, description])

@@ -224,7 +224,13 @@ class Configuration(object):
 
 
 if __name__ == "__main__":
-    c = Configuration('application-project_good.yml', [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
+
+    from pkg_resources import resource_stream
+    import yaml
+
+    #yaml_file = resource_stream('resources', "application-project.template.yml")
+    #print(yaml.full_load(yaml_file))
+    c = Configuration('application-project.yml', [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
                                                   PropertyGroup('reqd', 'MINIMUM REQUIRED OPTIONS'),
                                                   PropertyGroup('scan', 'OPTIONS TO IMPROVE SCAN COVERAGE'),
                                                   PropertyGroup('size', 'OPTIONS TO REDUCE SIGNATURE SCAN SIZE'),
@@ -232,4 +238,6 @@ if __name__ == "__main__":
                                                   PropertyGroup('lic', 'OPTIONS TO IMPROVE LICENSE COMPLIANCE ANALYSIS'),
                                                   PropertyGroup('proj', 'PROJECT OPTIONS'),
                                                   PropertyGroup('docker', 'DOCKER SCANNING')])
+
+
     print(c)
