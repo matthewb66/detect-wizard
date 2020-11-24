@@ -127,7 +127,6 @@ license_search_actionable = Actionable("License Search", {'scan_focus == "l"':
                                                               ("detect.blackduck.signature.scanner.license.search=true",
                                                                'License search WILL be used.')},
                                        default_description="License search will NOT be used. ")
-wl = WizardLogger()
 
 detectors_file_dict = {
     'build.env': ['bitbake'],
@@ -443,19 +442,17 @@ cli_msgs_dict['rep'] = "--detect.wait.for.results=true\n" + \
                        "--detect.risk.report.pdf=true\n" + \
                        "    (OPTIONAL Black Duck risk report in PDF form will be created in project directory)\n" + \
                        "--detect.risk.report.pdf.path=PDF_PATH\n" + \
-                       "    (OPTIONAL Output directory for risk report in PDF. Default is the project directory.\n"
-"--detect.report.timeout=XXX\n" + \
-"    (OPTIONAL Amount of time in seconds Detect will wait for scans to finish and to generate reports (default 300).\n" + \
-"    300 seconds may be sufficient, but very large scans can take up to 20 minutes (1200 seconds) or longer)\n"
+                       "    (OPTIONAL Output directory for risk report in PDF. Default is the project directory.\n" +\
+                       "--detect.report.timeout=XXX\n" + \
+                       "    (OPTIONAL Amount of time in seconds Detect will wait for scans to finish and to generate reports (default 300).\n" + \
+                       "    300 seconds may be sufficient, but very large scans can take up to 20 minutes (1200 seconds) or longer)\n"
 
 parser = argparse.ArgumentParser(
     description='Check prerequisites for Detect, scan folders, configure and run Synopsys Detect', prog='detect_wizard')
 parser.add_argument("scanfolder", nargs="?", help="Project folder to analyse", default="")
 parser.add_argument("-b", "--bdignore", help="Create .bdignore files in sub-folders to exclude folders from scan",
                     action='store_true')
-# parser.add_argument("-D", "--docker", help="Check docker prerequisites",action='store_true')
 parser.add_argument("-i", "--interactive", help="Use interactive mode to review/set options", action='store_true')
-# parser.add_argument("--docker_only", help="Only check docker prerequisites",action='store_true')
 parser.add_argument("-s", "--sensitivity",
                     help="Coverage/sensitivity - 1 = dependency scan only & limited FPs, 5 = all scan types including all potential matches")
 parser.add_argument("-f", "--focus", help="Scan focus of License Compliance (l) / Security (s) / Both (b)")
@@ -463,8 +460,8 @@ parser.add_argument("-u", "--url", help="Black Duck Server URL")
 parser.add_argument("-a", "--api_token", help="Black Duck Server API Token")
 parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only create .yml project config file",
                     action='store_true')
-parser.add_argument('--no_write', help="Do not add files to scan directory.", action='store_true')
-parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
+#parser.add_argument('--no_write', help="Do not add files to scan directory.", action='store_true')
+#parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
 parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
 parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
 args = parser.parse_args()
@@ -1095,7 +1092,7 @@ def print_summary(critical_only, f):
 
     summary += "--------------------  --------------   --------------   -------------   -------------   -------------\n"
 
-    summary += rep + "\n"
+    #summary += rep + "\n"
 
     if not critical_only:
         print(summary)
@@ -1149,17 +1146,6 @@ def signature_process(folder, f):
             trunc((sizes['file'][notinarc] + sizes['arc'][notinarc]) / 1000000)) + \
                                  "    Impact:  Will impact Capacity license usage\n" + \
                                  "    Action:  Ignore folders, remove large files or use repeated scans of sub-folders (Also consider detect_advisor -b option to create multiple .bdignore files to ignore duplicate folders)\n\n"
-
-    # Log the use of json splitter
-    if use_json_splitter:
-        wl.log("Scan Subdivision", "Scan size ({:>,.2f}g) is >= 5g".format(
-            float((sizes['file'][notinarc] + sizes['arc'][notinarc])) / 1000000000),
-               "use_json_splitter=true", "Scan WILL be split")
-    else:
-        wl.log("Scan Subdivision", "Scan size ({:>,.2f}g) is within global size limit (5g)"
-               .format(float((sizes['file'][notinarc] + sizes['arc'][notinarc])) / 1000000000),
-               "use_json_splitter=false",
-               "Scan WILL NOT be split")
 
     if counts['file'][notinarc] + counts['file'][inarc] > 1000000:
         recs_msgs_dict['imp'] += "- IMPORTANT: Overall number of files ({:>,d}) is very large\n".format(
@@ -1704,7 +1690,7 @@ def output_config(conffile, c):
         config = re.sub(r"\n--", r"\n#", config, flags=re.S)
         try:
             cf = open(conffile, "a")
-            cf.write(str(c))
+            cf.write(str(c)) # Writes new config file instead of old.
             cf.close()
         #             print("INFO: Config file 'application-project.yml' file written to project folder (Edit to uncomment options)\n" + \
         #             "      - Use '--spring.profiles.active=project' to specify this configuration")
@@ -1930,12 +1916,10 @@ def uncomment_optimize_dependency_options(data, start_index, end_index):
 
         if args.sensitivity > 2:
             data[data.index(line)] = uncomment_line(line, 'dev.dependencies: true')
-            wl.log("Dev Dependencies", "sensitivity > 2", "dev.dependencies = true",
-                   "Dev dependencies will be a part of the detect run")
+
         elif args.sensitivity < 3:
             data[data.index(line)] = uncomment_line(line, 'dev.dependencies: false')
-            wl.log("Dev Dependencies", "sensitivity < 3", "dev.dependencies = false",
-                   "Dev dependencies will NOT be a part of the detect run")
+
     return data
 
 
@@ -2085,8 +2069,8 @@ def run_detect(config_file):
     p = subprocess.Popen(detect_command, shell=True, executable='/bin/bash',
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     stdout = p.stdout
-    with open('latest_detect_run.txt', "w+") as out_file:
-        out_file.write(wl.make_table())
+    with open(os.path.join(args.scanfolder, 'latest_detect_run.txt'), "w+") as out_file:
+        out_file.write(Actionable.wl.make_table(args.sensitivity))
         while True:
             std_out_output = stdout.readline()
             if std_out_output == '' or re.findall(r'Result code of [0-9]*, exiting', std_out_output.decode('utf-8')):
@@ -2095,7 +2079,7 @@ def run_detect(config_file):
                 out_file.write(std_out_output.decode('utf-8'))
                 print(std_out_output.decode('utf-8').strip())
 
-    with open('latest_detect_run.txt', "r") as out_file:
+    with open(os.path.join(args.scanfolder, 'latest_detect_run.txt'), "r") as out_file:
         file_contents = out_file.read()
 
     detect_status = re.search(r'Overall Status: (.*)\n', file_contents)
@@ -2157,47 +2141,8 @@ def cleanup():
 
 
 def run():
-    config_file = os.path.join(os.getcwd(), "application-project.yml")
+
     global c
-    c = Configuration(config_file, [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
-                                    PropertyGroup('reqd', 'MINIMUM REQUIRED OPTIONS'),
-                                    PropertyGroup('scan', 'OPTIONS TO IMPROVE SCAN COVERAGE'),
-                                    PropertyGroup('size', 'OPTIONS TO REDUCE SIGNATURE SCAN SIZE'),
-                                    PropertyGroup('dep', 'OPTIONS TO CONFIGURE DEPENDENCY SCAN'),
-                                    PropertyGroup('lic', 'OPTIONS TO IMPROVE LICENSE COMPLIANCE ANALYSIS'),
-                                    PropertyGroup('proj', 'PROJECT OPTIONS',
-                                                  defaults="--detect.project.name=PROJECT_NAME\n" + \
-                                                           "--detect.project.version.name=VERSION_NAME\n" + \
-                                                           "    (OPTIONAL Specify project and version names)\n" + \
-                                                           "--detect.project.version.update=true\n" + \
-                                                           "    (OPTIONAL Update project and version parameters below for existing projects)\n" + \
-                                                           "--detect.project.tier=X\n" + \
-                                                           "    (OPTIONAL Define project tier numeric for new project)\n" + \
-                                                           "--detect.project.version.phase=ARCHIVED/DEPRECATED/DEVELOPMENT/PLANNING/PRERELEASE/RELEASED\n" + \
-                                                           "    (OPTIONAL Specify project phase for new project - default DEVELOPMENT)\n" + \
-                                                           "--detect.project.version.distribution=EXTERNAL/SAAS/INTERNAL/OPENSOURCE\n" + \
-                                                           "    (OPTIONAL Specify version distribution for new project - default EXTERNAL)\n" + \
-                                                           "--detect.project.user.groups='GROUP1,GROUP2'\n" + \
-                                                           "    (OPTIONAL Define group access for project for new project)\n"),
-                                    PropertyGroup('rep', 'REPORTING OPTIONS',
-                                                  defaults="--detect.wait.for.results=true\n" + \
-                                                           "    (OPTIONAL Wait for server-side analysis to complete - useful for script execution after scan)\n" + \
-                                                           "--detect.cleanup=false\n" + \
-                                                           "    (OPTIONAL Retain scan results in $HOME/blackduck folder)\n" + \
-                                                           "--detect.policy.check.fail.on.severities='ALL,NONE,UNSPECIFIED,TRIVIAL,MINOR,MAJOR,CRITICAL,BLOCKER'\n" + \
-                                                           "    (OPTIONAL Comma-separated list of policy violation severities that will cause Detect to return fail code\n" + \
-                                                           "--detect.notices.report=true\n" + \
-                                                           "    (OPTIONAL Generate Notices Report in text form in project directory)\n" + \
-                                                           "--detect.notices.report.path=NOTICES_PATH\n" + \
-                                                           "    (OPTIONAL The output directory for notices report. Default is the project directory)\n" + \
-                                                           "--detect.risk.report.pdf=true\n" + \
-                                                           "    (OPTIONAL Black Duck risk report in PDF form will be created in project directory)\n" + \
-                                                           "--detect.risk.report.pdf.path=PDF_PATH\n" + \
-                                                           "    (OPTIONAL Output directory for risk report in PDF. Default is the project directory.\n"
-                                                           "--detect.report.timeout=XXX\n" + \
-                                                           "    (OPTIONAL Amount of time in seconds Detect will wait for scans to finish and to generate reports (default 300).\n" + \
-                                                           "    300 seconds may be sufficient, but very large scans can take up to 20 minutes (1200 seconds) or longer)\n"),
-                                    PropertyGroup('docker', 'DOCKER SCANNING')])
 
     if os.environ.get('BLACKDUCK_URL') != "" and args.url is None:
         args.url = os.environ.get('BLACKDUCK_URL')
@@ -2225,6 +2170,46 @@ def run():
     if args.scanfolder == "" or args.url is None or args.api_token is None:
         print("Black Duck server URL and API token are required\nExiting")
         sys.exit(1)
+    conffile = os.path.join(args.scanfolder, "application-project.yml")
+    c = Configuration(conffile, [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
+                                 PropertyGroup('reqd', 'MINIMUM REQUIRED OPTIONS'),
+                                 PropertyGroup('scan', 'OPTIONS TO IMPROVE SCAN COVERAGE'),
+                                 PropertyGroup('size', 'OPTIONS TO REDUCE SIGNATURE SCAN SIZE'),
+                                 PropertyGroup('dep', 'OPTIONS TO CONFIGURE DEPENDENCY SCAN'),
+                                 PropertyGroup('lic', 'OPTIONS TO IMPROVE LICENSE COMPLIANCE ANALYSIS'),
+                                 PropertyGroup('proj', 'PROJECT OPTIONS',
+                                               defaults="--detect.project.name=PROJECT_NAME\n" + \
+                                                        "--detect.project.version.name=VERSION_NAME\n" + \
+                                                        "    (OPTIONAL Specify project and version names)\n" + \
+                                                        "--detect.project.version.update=true\n" + \
+                                                        "    (OPTIONAL Update project and version parameters below for existing projects)\n" + \
+                                                        "--detect.project.tier=X\n" + \
+                                                        "    (OPTIONAL Define project tier numeric for new project)\n" + \
+                                                        "--detect.project.version.phase=ARCHIVED/DEPRECATED/DEVELOPMENT/PLANNING/PRERELEASE/RELEASED\n" + \
+                                                        "    (OPTIONAL Specify project phase for new project - default DEVELOPMENT)\n" + \
+                                                        "--detect.project.version.distribution=EXTERNAL/SAAS/INTERNAL/OPENSOURCE\n" + \
+                                                        "    (OPTIONAL Specify version distribution for new project - default EXTERNAL)\n" + \
+                                                        "--detect.project.user.groups='GROUP1,GROUP2'\n" + \
+                                                        "    (OPTIONAL Define group access for project for new project)\n"),
+                                 PropertyGroup('rep', 'REPORTING OPTIONS',
+                                               defaults="--detect.wait.for.results=true\n" + \
+                                                        "    (OPTIONAL Wait for server-side analysis to complete - useful for script execution after scan)\n" + \
+                                                        "--detect.cleanup=false\n" + \
+                                                        "    (OPTIONAL Retain scan results in $HOME/blackduck folder)\n" + \
+                                                        "--detect.policy.check.fail.on.severities='ALL,NONE,UNSPECIFIED,TRIVIAL,MINOR,MAJOR,CRITICAL,BLOCKER'\n" + \
+                                                        "    (OPTIONAL Comma-separated list of policy violation severities that will cause Detect to return fail code\n" + \
+                                                        "--detect.notices.report=true\n" + \
+                                                        "    (OPTIONAL Generate Notices Report in text form in project directory)\n" + \
+                                                        "--detect.notices.report.path=NOTICES_PATH\n" + \
+                                                        "    (OPTIONAL The output directory for notices report. Default is the project directory)\n" + \
+                                                        "--detect.risk.report.pdf=true\n" + \
+                                                        "    (OPTIONAL Black Duck risk report in PDF form will be created in project directory)\n" + \
+                                                        "--detect.risk.report.pdf.path=PDF_PATH\n" + \
+                                                        "    (OPTIONAL Output directory for risk report in PDF. Default is the project directory.\n"
+                                                        "--detect.report.timeout=XXX\n" + \
+                                                        "    (OPTIONAL Amount of time in seconds Detect will wait for scans to finish and to generate reports (default 300).\n" + \
+                                                        "    300 seconds may be sufficient, but very large scans can take up to 20 minutes (1200 seconds) or longer)\n"),
+                                 PropertyGroup('docker', 'DOCKER SCANNING')])
 
     c.str_add('reqd', "--blackduck.url={}\n".format(args.url), should_update=True)
     c.str_add('reqd', "--blackduck.api.token={}\n".format(args.api_token), should_update=True)
@@ -2291,7 +2276,7 @@ def run():
     # output_cli(False, args.report, f)
 
     # if args.output_config:
-    conffile = os.path.join(args.scanfolder, "application-project.yml")
+    #conffile = os.path.join(args.scanfolder, "application-project.yml")
     backup = backup_file(conffile, "project config")
 
     output_config(conffile, c)
