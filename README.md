@@ -18,9 +18,9 @@ and optionally invoking Synopsys Detect to perform the scan.
 # DETAILED DESCRIPTION
 
 The Detect Wizard uses several inputs by default including:
-- Folder to scan (required)
-- Black Duck server URL (required)
-- Black Duck API token (required)
+- Folder to scan (REQUIRED)
+- Black Duck server URL (REQUIRED)
+- Black Duck API token (REQUIRED)
 - Scan sensitivity value (determines how detailed the scan will be - default 3)
 - Scan focus (license, security or both - default both)
 - Black Duck Project name (default none)
@@ -30,20 +30,52 @@ These values can be specified as arguments, or will be requested in an interacti
 from standard Detect environment variables if set in the environment.
 
 The scan sensitivity value specifies the analysis scope ranging from 1 (most accurate Bill of Materials with minimal false positives – but with the potential 
-to miss some OSS components) to 5 (most comprehensive analysis to identify as many OSS components as possible but with the potential for many false positives).
+to miss some OSS components) to 5 (most comprehensive analysis to identify as many OSS components as possible but with the potential for many false positives). See the section `Scan Sensitivity` below.
 
-Detect Wizard supports similar techniques to Synopsys Detect to determine predefined Detect scan parameters (including environment variables and using 
-existing .yml project configuration files). Detect Wizard will check the prerequisites to run Synopsys Detect (including the correct version of Java) and then scan the project location for files 
-and archives, calculate the total scan size, check for project (package manager) files and package managers themselves and will also detect large duplicate 
-files and folders.
+Detect Wizard allows predefined Detect scan parameters to be defined as environment variables which will be passed straight to Synopsys Detect. An existing existing .yml project configuration file will be backed up and will not be used by Detect Wizard or in creating the new .yml file. Detect Wizard will check the prerequisites to run Synopsys Detect (including the correct version of Java) and then scan the project location for files and archives, calculate the total scan size, check for project (package manager) files and package managers themselves and will also detect large duplicate files and folders.
 
-It will expand .zip and .jar files automatically, processing recursive files (zips within zips etc.). Other archive types (.gz, .tar, .Z etc.) are not 
+It will expand .zip, .jar and .tar files automatically, processing recursive files (zips within zips etc.). Other archive types (.gz, .Z etc.) are not 
 currently expanded by Detect Wizard (although they will be expanded by Synopsys Detect).
 
 Based on the specified sensitivity and scan type, it will identify Detect options which are relevant to the scanned project and determine suitable settings 
 to support the level of scan required.
 
 It will export a .yml file for use in Detect scans later, and will optionally call Detect directly to run the scan.
+
+# CONTROLLING THE LEVEL OF SCAN USING THE WIZARD
+
+Detect Wizard uses 2 input factors to control the types of scan and the scan features used:
+
+1. Scan sensitivity value (1-5)
+1. Scan focus (l, s or b for License, Security or Both)
+
+## Scan Sensitivity
+
+Scan sensitivity can be specified as a command line argument (-s or --sensitivity) or in interactive mode, and accepts a value between 1 and 5.
+
+Sensitivity of 1 will configure/run a minimal scope scan focussed on package manager direct dependencies only and without a Signature (folder) scan; this is intended to ensure that identified OSS components are highly likely to be included and used in the running application with the minimal number of OSS components which may be in the project but not used in the project.
+
+Sensitivity of 3 (the default) is intended to be a general purpose scan which will try to perform a comprehensive analysis including OSS components most likely to be used the application, but could potentially include some which are in the project but not used by the application.
+
+Sensitivity of 5 will configure/run a maximal scope scan using all relevant scanning types including package manager dependency analysis (including dev and test dependencies), signature scan (incuding individual file matching where appropriate to include singleton JS files, and not trying to include ), and optionally snippet scanning etc. intended to identify all possible OSS components whether they are used in the application or not.
+
+The full list of scan types/options by sensivity is shown below:
+
+| Sensitivity   | Dependency Scan | Dev Deps | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
+| :------------ | :-------------- | :------- | :------------- | :--------- | :--------- | :------- | :---------- |
+| 1             | Buildless | Excluded | No | Min depth, Std exclusions | Ignored | No | Yes |
+| 2             | Full | Included | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
+| 3             | Full | Included | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
+| 4             | Full | Included | Yes + Ind Files | Half max depth, Std exclusions | Ignored | No | Yes |
+| 5             | Full | Included | Yes + Ind Files | Half max depth, No exclusions | Ignored | Yes | Yes |
+
+## Scan Focus
+
+Scan focus can be selected between `s` (for security only), `l` (for license compiance only) or `b` (for both).
+
+Selecting 'l' will XXX
+
+Selecting 's' will XXX
 
 # PREREQUISITES
 Detect Wizard requires Python 3 to be installed.
@@ -175,9 +207,13 @@ This section includes a list of critical findings which will cause Detect to fai
         Impact:  Scan will fail
         Action:  Ignore folders or remove large files
 
+# DETECT SCAN PROCESS
+
+If the `Run Detect Scan` option is specified (or the `-n` or `--no_scan` option is specified), then Detect Wizard will call the standard Synopsys Detect to run the scan using the options generated by the Wizard.
+
 # OUTPUT CONFIG FILES
-The file application-project.yml will be created in the project folder if it does not already exist. If a copy already exists it will be renamed first. 
-The application-project.yml config file can be used to configure Detect using the single --spring.profiles.active=project option.
+The file application-project.yml will be created in the project folder if it does not already exist. If the file already exists it will be renamed first. 
+The application-project.yml config file can be used to configure Synopsys Detect using the single `--spring.profiles.active=project` option.
 
 The -b or --bdignore option will create multiple .bdignore files in sub-folders beneath the project folder if they do not already exist. The .bdignore files 
 will be created in parent folders of duplicate folders or those containing only binary files for exclusion. USE WITH CAUTION as it will cause specified folders 
