@@ -755,7 +755,6 @@ def process_dir(path, dirdepth, ignore):
             ignorethis = False
             if entry.name in ignored_files_and_directories:
                 ignorethis = True
-                ignore = True
             dir_entries += 1
             filenames_string += entry.name + ";"
             if entry.is_dir(follow_symlinks=False):
