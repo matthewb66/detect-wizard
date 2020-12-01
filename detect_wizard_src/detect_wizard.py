@@ -137,6 +137,11 @@ dev_dependency_pkg_managers = {'packagist': True,
                                'npm': True,
                                'ruby': False}
 
+ignored_files_and_directories = {'CVS', '.svn', '.hg', '.bzr', '__MACOSX',
+                                 '.cvsignore', '.git', '.gitignore', '.gitattributes',
+                                 '.gitmodules', '.hgignore', '.hgsub', '.hgsubstate', '.hgtags',
+                                 '.bzrignore', 'vssver.scc', '.DS_Store', 'node_modules'}
+
 detectors_file_dict = {
     'build.env': ['bitbake'],
     'cargo.toml': ['cargo'],
@@ -629,6 +634,7 @@ def process_zip(zippath, zipdepth, dirdepth):
 
 
 def checkfile(name, path, size, size_comp, dirdepth, in_archive, filebuff=None):
+
     ext = os.path.splitext(name)[1]
     if filebuff is not None:
         magic_result = magic.from_buffer(filebuff, mime=True)
@@ -747,6 +753,9 @@ def process_dir(path, dirdepth, ignore):
 
         for entry in os.scandir(path):
             ignorethis = False
+            if entry.name in ignored_files_and_directories:
+                ignorethis = True
+                ignore = True
             dir_entries += 1
             filenames_string += entry.name + ";"
             if entry.is_dir(follow_symlinks=False):
@@ -1860,10 +1869,11 @@ def get_detector_args():
     for item in get_detector_exclusion_args():
         detector_args.append(item)
     result = license_search_actionable.test(scan_focus=args.focus)
-    print(result)
     if result.outcome != "NO-OP":
         cli_msgs_dict['scan'] += "{}\n".format(result.outcome)
-        c.str_add('scan', result.outcome)
+
+        c.str_add('scan', result.outcome[0])
+        c.str_add('scan', result.outcome[1])
     return detector_args
 
 
