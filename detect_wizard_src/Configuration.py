@@ -118,28 +118,28 @@ class Configuration(object):
         for pg in config_groups:
             self.property_groups[pg.key] = pg
             self.property_groups_title[pg.title] = self.property_groups[pg.key]
-        try:
-            self.file = open(self.filename, 'r')
-            current_key = None
-
-            for (i, line) in enumerate(self.file.readlines()):
-                line = line[0:len(line)-1]
-                potential_prop_grp = PropertyGroup.look_for_group_def_title(line)
-                # See if we've switched property groups (by title)
-                if potential_prop_grp in self.property_groups_title:
-                    current_key = self.property_groups_title[potential_prop_grp].key
-                    self.property_groups[current_key].line_no_offset = i # set the offset in the original config to where we are now
-
-                if current_key is not None:
-                    if (result := Property.parse(line)) is not None:
-                        # Add legit property
-                        self.property_groups[current_key].add_property(result, should_update=True)
-                    else:
-                        # add a comment line
-                        self.property_groups[current_key].add_comment_line(line)
-
-        except FileNotFoundError:
-            self.file = open(self.filename, 'w')
+  #      try:
+ #           self.file = open(self.filename, 'r')
+ #           current_key = None
+#
+  #          for (i, line) in enumerate(self.file.readlines()):
+  #              line = line[0:len(line)-1]
+  #              potential_prop_grp = PropertyGroup.look_for_group_def_title(line)
+ #               # See if we've switched property groups (by title)
+  #              if potential_prop_grp in self.property_groups_title:
+ #                   current_key = self.property_groups_title[potential_prop_grp].key
+ #                   self.property_groups[current_key].line_no_offset = i # set the offset in the original config to where we are now
+#
+ #               if current_key is not None:
+ #                   if (result := Property.parse(line)) is not None:
+#                        # Add legit property
+ #                       self.property_groups[current_key].add_property(result, should_update=True)
+  #                  else:
+#                       # add a comment line
+ #                       self.property_groups[current_key].add_comment_line(line)
+#
+        #except FileNotFoundError:
+        self.file = open(self.filename, 'w')
 
     def str_add(self, property_class, property_str, is_commented=False, should_update=False):
         property = Property.parse(property_str)

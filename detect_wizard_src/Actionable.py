@@ -60,7 +60,6 @@ def format_value(val: str):
 
 def parse_cause_actions(cause_action_dict: dict, vars_dict: dict):
     output = {}
-
     for k, v in cause_action_dict.items():
         split_str = re.split("(?:\\s+(and|or)\\s+)", k)
         intermediate_results = []
@@ -68,14 +67,13 @@ def parse_cause_actions(cause_action_dict: dict, vars_dict: dict):
         causes_against = []
         did_fail = False
         for component in split_str:
-            findallret = re.findall("(^[a-z\\_]+) ([<>=]+) ([0-9a-zA-Z\"\'.]+)$", component)
+            findallret = re.findall("(^[a-z\\_]+) ([!<>=]+) ([0-9a-zA-Z\"\'.]+)$", component)
             if len(findallret) > 0:
                 # this is an operator
                 var, op, val = findallret[0]
                 if var not in vars_dict.keys():
                     raise ValueError("Variable {} not found in vars_dict ({})".format(var, vars_dict.keys()))
                 else:
-
                     test_result = test_sensitivity((op, format_value(val)), vars_dict[var])
                     the_result = test_result
                     if the_result:

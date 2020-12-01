@@ -47,6 +47,7 @@ dockerext_list = ['.tar', '.gz']
 pkgext_list = ['.rpm', '.deb', '.dmg']
 lic_list = ['LICENSE', 'LICENSE.txt', 'notice.txt', 'license.txt', 'license.html', 'NOTICE', 'NOTICE.txt']
 
+
 # Sets Sig scan
 sig_scan_actionable = Actionable("Signature Scan",
                                  {'sensitivity == 1':
@@ -104,12 +105,13 @@ detector_exclusions_actionable = Actionable("Detector Search Exclusions",
                                             default_description="Search exclusion defaults are used.")
 
 buildless_mode_actionable = Actionable("Buildless Mode", {
-    'sensitivity <= 2': ("--detect.detector.buildless=true", "Buildless mode WILL be used.")},
+    'sensitivity <= 1': ("detect.detector.buildless: true", "Buildless mode WILL be used.")},
                                        default_description="Buildless mode will NOT be used.")
 
 dev_dependencies_actionable = Actionable("Dev Dependencies", {
-    'sensitivity <= 2': ("--dev.dependencies=true", "Dev dependencies WILL be used."),
-    'sensitivity > 2': ("--dev.dependencies=false", "Dev dependencies WILL NOT be used.")})
+    'sensitivity <= 2': ("detect.${cmd}.include.dev.dependencies: ${dev_dependency_param_pos}", "Dev dependencies WILL be used."),
+    'sensitivity > 2': ("detect.${cmd}.include.dev.dependencies: ${dev_dependency_param_neg}", "Dev dependencies WILL NOT be used.")
+})
 
 detect_docker_actionable = Actionable("Detect Docker TAR", {'sensitivity >= 3 and docker_tar_present == true':
                                                                 ("--detect.docker.tar='${docker_tar}'",
@@ -123,10 +125,17 @@ json_splitter_actionable = Actionable("Scanfile Splitter", {'sensitivity > 1 and
                                                                  "Scan (${scan_size}GB) will be split up to avoid reaching scanfile size limit of (5GB)")},
                                       default_description="Scan (${scan_size}GB) is within size limit (5GB) and will NOT be split.")
 
-license_search_actionable = Actionable("License Search", {'scan_focus == "l"':
-                                                              ("detect.blackduck.signature.scanner.license.search=true",
+license_search_actionable = Actionable("License Search", {'scan_focus != "s"':
+                                                              (
+                                                                  ("detect.blackduck.signature.scanner.license.search: true",
+                                                                   "detect.blackduck.signature.scanner.copyright.search: true"),
                                                                'License search WILL be used.')},
                                        default_description="License search will NOT be used. ")
+
+
+dev_dependency_pkg_managers = {'packagist': True,
+                               'npm': True,
+                               'ruby': False}
 
 detectors_file_dict = {
     'build.env': ['bitbake'],
@@ -762,8 +771,8 @@ def process_dir(path, dirdepth, ignore):
                     ext = os.path.splitext(entry.name)[1]
                     if ext in supported_zipext_list:
                         process_zip(entry.path, 0, dirdepth)
-                    if ext in supported_tar_list:
-                        process_tar(entry.path, 0, dirdepth)
+                    #if ext in supported_tar_list:
+                    #    process_tar(entry.path, 0, dirdepth)
 
                 dir_size += entry.stat(follow_symlinks=False).st_size
 
@@ -1355,10 +1364,7 @@ def detector_process(folder, f):
         c.str_add('dep', result.outcome)
         cli_msgs_dict['dep'] += "{}\n".format(result.outcome)
 
-    dev_dep_result = dev_dependencies_actionable.test(sensitivity=args.sensitivity)
-    if dev_dep_result.outcome != "NO-OP":
-        c.str_add('dep', dev_dep_result.outcome)
-        cli_msgs_dict['dep'] += "{}\n".format(dev_dep_result.outcome)
+
 
     if cmds_missing1 or cmds_missingother:
         package_managers_missing.append(cmds_missing1)
@@ -1366,6 +1372,20 @@ def detector_process(folder, f):
         c.add('dep', Property('detect.XXXX.path', '<LOCATION>', is_commented=True))
 
     for cmd in detectors_list:
+        if cmd in dev_dependency_pkg_managers:
+            parity = dev_dependency_pkg_managers[cmd]
+            pos_param = True
+            neg_param = False
+            if not parity:
+                pos_param=False
+                neg_param=True
+
+            dev_dep_result = dev_dependencies_actionable.test(sensitivity=args.sensitivity, cmd=cmd,
+                                                              dev_dependency_param_pos=pos_param,
+                                                              dev_dependency_param_neg=neg_param)
+            if dev_dep_result.outcome != "NO-OP":
+                c.str_add('dep', dev_dep_result.outcome)
+                cli_msgs_dict['dep'] += "{}\n".format(dev_dep_result.outcome)
         if cmd in detector_cli_options_dict.keys():
             for prop in detector_cli_options_dict[cmd].splitlines(keepends=False):
                 c.str_add('dep', prop, is_commented=True)
@@ -1840,6 +1860,7 @@ def get_detector_args():
     for item in get_detector_exclusion_args():
         detector_args.append(item)
     result = license_search_actionable.test(scan_focus=args.focus)
+    print(result)
     if result.outcome != "NO-OP":
         cli_msgs_dict['scan'] += "{}\n".format(result.outcome)
         c.str_add('scan', result.outcome)
@@ -1903,10 +1924,10 @@ def uncomment_improve_scan_coverage_options(data, start_index, end_index):
 
 
 def uncomment_reduce_sig_scan_size_options(data, start_index, end_index):
-    c.uncomment_property('detect.tools.excluded')
-    for line in data[start_index:end_index]:
-        if 'detect.tools.excluded' in line:
-            data[data.index(line)] = uncomment_line(line, 'detect.tools.excluded')
+    #c.uncomment_property('detect.tools.excluded')
+    #for line in data[start_index:end_index]:
+    #    if 'detect.tools.excluded' in line:
+    #        data[data.index(line)] = uncomment_line(line, 'detect.tools.excluded')
     return data
 
 
