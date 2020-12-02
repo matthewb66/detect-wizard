@@ -32,7 +32,7 @@ from standard Detect environment variables if set in the environment.
 The scan sensitivity value specifies the analysis scope ranging from 1 (most accurate Bill of Materials with minimal false positives – but with the potential 
 to miss some OSS components) to 5 (most comprehensive analysis to identify as many OSS components as possible but with the potential for many false positives). See the section `Scan Sensitivity` below.
 
-Detect Wizard allows predefined Detect scan parameters to be defined as environment variables which will be passed straight to Synopsys Detect. An existing existing .yml project configuration file will be backed up and will not be used by Detect Wizard or in creating the new .yml file. Detect Wizard will check the prerequisites to run Synopsys Detect (including the correct version of Java) and then scan the project location for files and archives, calculate the total scan size, check for project (package manager) files and package managers themselves and will also detect large duplicate files and folders.
+Detect Wizard allows predefined Detect scan parameters to be defined as environment variables which will be passed straight to Synopsys Detect. An existing .yml project configuration file will be backed up and will not be used by Detect Wizard or in creating the new .yml file. Detect Wizard will check the prerequisites to run Synopsys Detect (including the correct version of Java) and then scan the project location for files and archives, calculate the total scan size, check for project (package manager) files and package managers themselves and will also detect large duplicate files and folders.
 
 It will expand .zip, .jar and .tar files automatically, processing recursive files (zips within zips etc.). Other archive types (.gz, .Z etc.) are not 
 currently expanded by Detect Wizard (although they will be expanded by Synopsys Detect).
@@ -61,21 +61,18 @@ Sensitivity of 5 will configure/run a maximal scope scan using all relevant scan
 
 The full list of scan types/options by sensivity is shown below:
 
-| Sensitivity   | Dependency Scan | Dev Deps | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
+| Sensitivity   | Dependency Scan | Dev/Test Deps | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
 | :------------ | :-------------- | :------- | :------------- | :--------- | :--------- | :------- | :---------- |
 | 1             | Buildless | Excluded | No | Min depth, Std exclusions | Ignored | No | Yes |
-| 2             | Full | Included | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
-| 3             | Full | Included | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
-| 4             | Full | Included | Yes + Ind Files | Half max depth, Std exclusions | Ignored | No | Yes |
-| 5             | Full | Included | Yes + Ind Files | Half max depth, No exclusions | Ignored | Yes | Yes |
+| 2             | Full | Excluded | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
+| 3             | Full | Included | Yes | Half max depth, Std exclusions | Not Ignored | No | Yes |
+| 4             | Full | Included | Yes + Ind Files | Half max depth, No exclusions | Not Ignored | No | Yes |
+| 5             | Full | Included | Yes + Ind Files | Max depth, No exclusions | Not Ignored | Yes if Scan Focus = l or b | Yes |
 
 ## Scan Focus
-
 Scan focus can be selected between `s` (for security only), `l` (for license compiance only) or `b` (for both).
 
-Selecting 'l' will XXX
-
-Selecting 's' will XXX
+Selecting 'l' or 'b' will add the local copyright and license search options (`detect.blackduck.signature.scanner.copyright.search` and `detect.blackduck.signature.scanner.license.search`) to scans, in addition to using snippet scanning if the sensitivity level is set to 5.
 
 # PREREQUISITES
 Detect Wizard requires Python 3 to be installed.
@@ -149,10 +146,6 @@ If not specified, then the Black Duck project and version names will be determin
 
     python3 -m detect-wizard /Users/myuser/myproject
 
-# EXPLANATION OF SCAN SENSITIVITY
-
-To be added here.
-
 # SUMMARY INFO OUTPUT
 This section includes counts and size analysis for the files and folders beneath the project location.
 
@@ -206,6 +199,56 @@ This section includes a list of critical findings which will cause Detect to fai
     - CRITICAL: Overall scan size (6,520 MB) is too large
         Impact:  Scan will fail
         Action:  Ignore folders or remove large files
+
+# OUTPUT OPERATIONAL TABLE
+
+Detect Wizard will produce 2 output tables explaining which scan features and options have been applied and the reason for selection.
+
+The first table shows the options which will be applied (or the default option overridden) and the cause of this selection, whereas the second table shows options which will not be applied (NO-OP).
+
+    ----------------------------------------------- Sensitivity(5) Manifest -----------------------------------------------
+    Scan options applied:
+    +----------------------------+-----------------------------+-----------------------------+-----------------------------+
+    |         Actionable         |       Cause/Condition       |           Outcome           |         Description         |
+    +============================+=============================+=============================+=============================+
+    |   Individual File Match    |      sensitivity >= 4       | detect.blackduck.signature. |  Individual File Matching   |
+    |                            |                             | scanner.individual.file.mat |     (SOURCE) is ENABLED     |
+    |                            |                             |        ching=SOURCE         |                             |
+    +----------------------------+-----------------------------+-----------------------------+-----------------------------+
+    |   File Snippet Matching    |      sensitivity == 5,      | detect.blackduck.signature. |  File Snippet Matching set  |
+    |                            |      scan_focus != "s"      | scanner.snippet.matching=   |         to ENABLED          |
+    |                            |                             |      SNIPPET_MATCHING       |                             |
+    +----------------------------+-----------------------------+-----------------------------+-----------------------------+
+    | Detector Search Exclusions |      sensitivity >= 4       | detect.detector.search.excl |  Search exclusion defaults  |
+    |                            |                             |    usion.defaults=false    |        DEACTIVATED.         |
+    +----------------------------+-----------------------------+-----------------------------+-----------------------------+
+    |       License Search       |      scan_focus != "s"      | ('detect.blackduck.signatur |   License search WILL be    |
+    |                            |                             |  e.scanner.license.search=  |            used.            |
+    |                            |                             | true', 'detect.blackduck.si |                             |
+    |                            |                             | gnature.scanner.copyright.s |                             |
+    |                            |                             |        earch=true')         |                             |
+    +----------------------------+-----------------------------+-----------------------------+-----------------------------+
+    |   Detector Search Depth    |      sensitivity == 5       |              1              |  Detector search depth set  |
+    |                            |                             |                             |            to 1             |
+    +----------------------------+-----------------------------+-----------------------------+-----------------------------+
+    -----------------------------------------------------------------------------------------------------------------------
+    Scan options not applied:
+    +----------------------------+--------------------------------------+---------+----------------------------------------+
+    |         Actionable         |           Cause/Condition            | Outcome |              Description               |
+    +============================+======================================+=========+========================================+
+    |       Buildless Mode       |           sensitivity > 1            |  NO-OP  |    Buildless mode will NOT be used.    |
+    +----------------------------+--------------------------------------+---------+----------------------------------------+
+    |       Signature Scan       |           sensitivity != 1           |  NO-OP  |       Signature Scan is ENABLED        |
+    +----------------------------+--------------------------------------+---------+----------------------------------------+
+    |     Scanfile Splitter      |           scan_size < 4.5            |  NO-OP  |  Scan (0.0002GB) is within size limit  |
+    |                            |                                      |         |      (5GB) and will NOT be split.      |
+    +----------------------------+--------------------------------------+---------+----------------------------------------+
+    |      BDBA Binary Scan      | num_binaries <= 1, num_binaries != 1 |  NO-OP  |       BDBA will NOT be invoked.        |
+    +----------------------------+--------------------------------------+---------+----------------------------------------+
+    | Directory Duplicate Ignore |           sensitivity > 2            |  NO-OP  |   Duplicated directories WILL NOT be   |
+    |                            |                                      |         |                ignored.                |
+    +----------------------------+--------------------------------------+---------+----------------------------------------+
+    -----------------------------------------------------------------------------------------------------------------------
 
 # DETECT SCAN PROCESS
 
