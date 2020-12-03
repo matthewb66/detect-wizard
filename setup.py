@@ -2,6 +2,7 @@ import setuptools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
+    
 setuptools.setup(
     name="detect_wizard",
     version="1.0-Beta-13",
