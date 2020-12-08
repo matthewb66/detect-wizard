@@ -2201,6 +2201,7 @@ def run():
         print("Black Duck server URL and API token are required\nExiting")
         sys.exit(1)
     conffile = os.path.join(args.scanfolder, "application-project.yml")
+    backup = backup_file(conffile, "project config")
     c = Configuration(conffile, [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
                                  PropertyGroup('reqd', 'MINIMUM REQUIRED OPTIONS'),
                                  PropertyGroup('scan', 'OPTIONS TO IMPROVE SCAN COVERAGE'),
@@ -2307,7 +2308,7 @@ def run():
 
     # if args.output_config:
     #conffile = os.path.join(args.scanfolder, "application-project.yml")
-    backup = backup_file(conffile, "project config")
+
 
     output_config(conffile, c)
     if not args.no_scan:
