@@ -51,30 +51,30 @@ lic_list = ['LICENSE', 'LICENSE.txt', 'notice.txt', 'license.txt', 'license.html
 # Sets Sig scan
 sig_scan_actionable = Actionable("Signature Scan",
                                  {'sensitivity == 1':
-                                      ("--detect.tools.excluded=SIGNATURE_SCAN", "Signature Scan is DISABLED")},
+                                      ("detect.tools.excluded: SIGNATURE_SCAN", "Signature Scan is DISABLED")},
                                  default_description="Signature Scan is ENABLED")
 indiv_file_match_actionable = Actionable("Individual File Match",
                                          {'sensitivity >= 4':
-                                              ("--detect.blackduck.signature.scanner.individual.file.matching=SOURCE",
+                                              ("detect.blackduck.signature.scanner.individual.file.matching: SOURCE",
                                                "Individual File Matching (SOURCE) is ENABLED")},
                                          default_description="Individual File Matching (SOURCE) is DISABLED")
 
 binary_matching_actionable = Actionable("BDBA Binary Scan",
                                         {'sensitivity >= 4 and num_binaries > 1 and no_write == true':
-                                             ("--detect.binary.scan.file.path=${bin_pack_name}",
+                                             ("detect.binary.scan.file.path: ${bin_pack_name}",
                                               "${num_binaries} binaries found - but no_write==true..."),
                                          'sensitivity >= 4 and num_binaries > 1 and no_write == false':
-                                             ("--detect.binary.scan.file.path=${bin_pack_name}",
+                                             ("detect.binary.scan.file.path: ${bin_pack_name}",
                                               "${num_binaries} binaries found - loaded into zip archive - passed to BDBA."),
                                          'sensitivity >= 4 and num_binaries == 1':
-                                             ("--detect.binary.scan.file.path=${bin_pack_name}",
+                                             ("detect.binary.scan.file.path: ${bin_pack_name}",
                                               "One binary found, BDBA will be invoked.")},
                                         default_description="BDBA will NOT be invoked.")
 
 file_snippet_match_actionable = Actionable("File Snippet Matching",
                                            {'sensitivity == 5 and scan_focus != "s"':
                                                (
-                                                   "--detect.blackduck.signature.scanner.snippet.matching=SNIPPET_MATCHING",
+                                                   "detect.blackduck.signature.scanner.snippet.matching: SNIPPET_MATCHING",
                                                    "File Snippet Matching set to ENABLED")},
                                            default_description="File Snippet Matching is DISABLED")
 
@@ -114,7 +114,7 @@ dev_dependencies_actionable = Actionable("Dev Dependencies", {
 })
 
 detect_docker_actionable = Actionable("Detect Docker TAR", {'sensitivity >= 3 and docker_tar_present == true':
-                                                                ("--detect.docker.tar='${docker_tar}'",
+                                                                ("detect.docker.tar: '${docker_tar}'",
                                                                  "Docker Layer detection WILL be used on ${docker_tar}.")},
                                       default_description="Docker Layer Detection will NOT be used.")
 
@@ -758,7 +758,7 @@ def process_dir(path, dirdepth, ignore):
             dir_entries += 1
             filenames_string += entry.name + ";"
             if entry.is_dir(follow_symlinks=False):
-                if ignore or os.path.basename(entry.path) in ignore_list:
+                if ignore or os.path.basename(entry.path) in ignore_list or ignorethis:
                     ignorethis = True
                     counts['ignoredir'][notinarc] += 1
                 else:
@@ -768,7 +768,7 @@ def process_dir(path, dirdepth, ignore):
                 if ignorethis:
                     sizes['ignoredir'][notinarc] += this_size
             else:
-                if not ignore:
+                if not ignore or ignorethis:
                     ftype = checkfile(entry.name, entry.path, entry.stat(follow_symlinks=False).st_size, 0, dirdepth,
                                       False)
                     if ftype == 'bin':

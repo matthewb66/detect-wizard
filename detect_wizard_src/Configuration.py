@@ -144,7 +144,8 @@ class Configuration(object):
     def str_add(self, property_class, property_str, is_commented=False, should_update=False):
         property = Property.parse(property_str)
         if property is None:
-            self.property_groups[property_class].add_comment_line(property_str)
+            for line in property_str.splitlines():
+                self.property_groups[property_class].add_comment_line(line)
         else:
             property.is_commented = is_commented
             self.property_groups[property_class].add_property(property, should_update=should_update)
@@ -239,5 +240,7 @@ if __name__ == "__main__":
                                                   PropertyGroup('proj', 'PROJECT OPTIONS'),
                                                   PropertyGroup('docker', 'DOCKER SCANNING')])
 
-
+    c.str_add('scan', "    (To find package manager files within sub-folders; note depth {} would find\n".format(
+        1) + \
+              "    all PM files in sub-folders but higher level projects may already include these)\n")
     print(c)

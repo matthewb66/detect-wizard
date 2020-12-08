@@ -20,9 +20,9 @@ class WizardLogger(object):
             for idx, (cause, outcome, description) in enumerate(cod_list):
                 if outcome == "NO-OP":
                     if idx == 0:
-                        data_rows_no_op.append([topic, ', '.join(cause), outcome, description])
+                        data_rows_no_op.append([topic, ', '.join(cause), description])
                     else:
-                        data_rows_no_op.append(["", ', '.join(cause), outcome, description])
+                        data_rows_no_op.append(["", ', '.join(cause), description])
                 else:
                     if idx == 0:
                         data_rows.append([topic, ', '.join(cause), outcome, description])
@@ -30,19 +30,19 @@ class WizardLogger(object):
                         data_rows.append(["", ', '.join(cause), outcome, description])
         table_pos = texttable.Texttable(max_width=120)
         table_pos.set_cols_align(["c", "c", "c", "c"])
-        table_pos.header(["Actionable", "Cause/Condition", "Outcome", "Description"])
+        table_pos.header(["Actionable", "Reason Action Taken", "Outcome", "Description"])
         table_pos.add_rows(data_rows, header=False)
         table_pos = table_pos.draw()
 
         table_neg = texttable.Texttable(max_width=120)
-        table_neg.set_cols_align(["c", "c", "c", "c"])
-        table_neg.header(["Actionable", "Cause/Condition", "Outcome", "Description"])
+        table_neg.set_cols_align(["c", "c", "c"])
+        table_neg.header(["Actionable", "Reason Action NOT Taken", "Description"])
         table_neg.add_rows(data_rows_no_op, header=False)
         table_neg = table_neg.draw()
 
         table_width = max(table_pos.index('\n'), table_neg.index('\n'))
-        title = " Sensitivity{} Manifest ".format("({})".format(sensitivity_value) if sensitivity_value is not None else "")
+        title = " Sensitivity (= {}) Configuration Manifest ".format(sensitivity_value)
         size = (table_width - len(title)) // 2
-        header_str = '-' * size + title + '-' * size
-        footer_str = '-' * len(header_str) + "\n"
-        return "{}\n{}\n{}{}\n{}".format(header_str, table_pos, footer_str, table_neg, footer_str)
+        header_str = '-' * size + title + '-' * (size)
+        footer_str = '-' * (len(header_str)) + "\n"
+        return "{}\nACTIONS TAKEN: \n{}\n{}ACTIONS NOT TAKEN: \n{}\n{}".format(header_str, table_pos, footer_str, table_neg, footer_str)
