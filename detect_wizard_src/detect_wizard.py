@@ -1373,7 +1373,7 @@ def detector_process(folder, f):
         cli_msgs_dict['dep'] += "{}\n".format(result.outcome)
 
 
-
+    #TODO ignore clang for applying buildless mode.
     if cmds_missing1 or cmds_missingother:
         package_managers_missing.append(cmds_missing1)
         c.add('dep', Property('detect.detector.buildless', 'true', is_commented=True))
@@ -1800,7 +1800,6 @@ def interactive(scanfolder, url, api, sensitivity, focus, no_scan, project_name,
 
 def get_detector_search_depth():
     global args
-    # TODO: we need defined behaviour for all sensitivities for detector search depth
 
     result = detector_search_depth_actionable.test(sensitivity=args.sensitivity)
     if result is not None and result.outcome != "NO-OP":
@@ -1853,14 +1852,6 @@ def get_detector_exclusion_args():
             c.str_add('size', result.outcome)
 
     return detector_exclusion_args
-
-
-def get_license_search_args():
-    pass
-    # detect_license_search_args = []
-    # if args.focus == "l":
-    #    detect_license_search_args.append("detect.blackduck.signature.scanner.license.search=true")
-    # return detect_license_search_args
 
 
 def get_detector_args():
@@ -2024,62 +2015,24 @@ def json_splitter(scan_path, maxNodeEntries=200000, maxScanSize=4500000000):
     return new_scan_files
 
 
-def uncomment_detect_commands(config_file):
-    with open(config_file, 'r+') as f:
-        data = f.readlines()
-    # data = c.get_lines()
+def generate_detect_config(config_file):
 
     detector_args = get_detector_args()
 
-    min_req_idx = [idx for idx, s in enumerate(data) if 'MINIMUM REQUIRED OPTIONS' in s][0]
-    improve_scan_coverage_idx = [idx for idx, s in enumerate(data) if 'OPTIONS TO IMPROVE SCAN COVERAGE' in s][
-        0]  # if cli_msgs_dict['scan'] else None
-    reduce_signature_size_idx = [idx for idx, s in enumerate(data) if 'OPTIONS TO REDUCE SIGNATURE SCAN SIZE' in s][
-        0]  # if cli_msgs_dict['size'] else None
-    optimize_dependency_scan_idx = [idx for idx, s in enumerate(data) if 'OPTIONS TO CONFIGURE DEPENDENCY SCAN' in s][
-        0]  # if cli_msgs_dict['dep'] else None
-    improve_license_compliance_idx = \
-        [idx for idx, s in enumerate(data) if 'OPTIONS TO IMPROVE LICENSE COMPLIANCE ANALYSIS' in s][
-            0]  # if cli_msgs_dict['lic'] else None
-    project_options_idx = [idx for idx, s in enumerate(data) if 'PROJECT OPTIONS' in s][
-        0]  # if cli_msgs_dict['proj'] else None
-    reporting_options_idx = [idx for idx, s in enumerate(data) if 'REPORTING OPTIONS' in s][
-        0]  # if cli_msgs_dict['rep'] else None
-
-    indices = [improve_scan_coverage_idx, reduce_signature_size_idx, optimize_dependency_scan_idx,
-               improve_license_compliance_idx, project_options_idx, reporting_options_idx, -1]
-
-    data = uncomment_min_required_options(data, min_req_idx + 1, next(item for item in indices if item is not None) - 1)
-    uncomment_line_from_data(data, "detect.docker.tar")
     c.uncomment_property('detect.docker.tar')
+    c.uncomment_like('blackduck.url')
+    c.uncomment_like('blackduck.api.token')
+    c.uncomment_like('detect.source.path')
+    c.uncomment_like('detect.detector.buildless')
+    get_detector_search_depth()
     if args.hub_project is not None and args.hub_project != "None":
         c.str_add('proj', 'detect.project.name: \'{}\''.format(args.hub_project), should_update=True)
     if args.hub_version is not None and args.hub_version != "None":
         c.str_add('proj', 'detect.project.version.name: \'{}\''.format(args.hub_version), should_update=True)
 
-    if improve_scan_coverage_idx:
-        indices.remove(improve_scan_coverage_idx)
-        data = uncomment_improve_scan_coverage_options(data, improve_scan_coverage_idx + 1,
-                                                       next(item for item in indices if item is not None) - 1)
-
-    if reduce_signature_size_idx:
-        indices.remove(reduce_signature_size_idx)
-        data = uncomment_reduce_sig_scan_size_options(data, reduce_signature_size_idx + 1,
-                                                      next(item for item in indices if item is not None) - 1)
-
-    if optimize_dependency_scan_idx:
-        indices.remove(optimize_dependency_scan_idx)
-        data = uncomment_optimize_dependency_options(data, optimize_dependency_scan_idx + 1,
-                                                     next(item for item in indices if item is not None) - 1)
-
-    for arg in detector_args:  # additional args not accounted for by reccomendations
-        data.append(arg + '\n')
-
     if use_json_splitter:
         c.str_add('size', 'blackduck.offline.mode: true', is_commented=False)
         c.str_add('size', 'detect.bom.aggregate.name: detect_advisor_run_{}'.format(datetime.now()), is_commented=False)
-        data.append('blackduck.offline.mode: true\n')
-        data.append('detect.bom.aggregate.name: detect_advisor_run_{}\n'.format(datetime.now()))
 
     with open(config_file, 'w') as f:
         f.writelines(str(c))
@@ -2087,7 +2040,7 @@ def uncomment_detect_commands(config_file):
 
 def run_detect(config_file):
     # print out information on what the sensitivity setting is doing
-    uncomment_detect_commands(config_file)
+    generate_detect_config(config_file)
     config_file = config_file.replace(" ", "\ ")
 
     print(Actionable.wl.make_table(args.sensitivity))
