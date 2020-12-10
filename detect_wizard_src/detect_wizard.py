@@ -2057,7 +2057,7 @@ def run_detect(config_file):
 
         p = subprocess.Popen(["powershell.exe",
                               detect_command],
-                             stdout=sys.stdout)
+                             stdout=subprocess.PIPE)
     else:
         p = subprocess.Popen(detect_command, shell=True, executable='/bin/bash', stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
