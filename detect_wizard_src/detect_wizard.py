@@ -2050,8 +2050,13 @@ def run_detect(config_file):
                      + ' --spring.config.location="file:' + config_file + '"'
     print("Running command: {}\n".format(detect_command))
     if platform.system() == "Windows":
+        detect_command = 'powershell "[Net.ServicePointManager]::SecurityProtocol = \'tls12\'; irm https://detect.synopsys.com/detect.ps1?$(Get-Random) | iex; detect"' + ' ' \
+                     + '--spring.profiles.active=project' + ' ' \
+                     + ' --blackduck.trust.cert=true' + ' ' \
+                     + ' --spring.config.location="file:' + config_file + '"'
+
         p = subprocess.Popen(["powershell.exe",
-                              "detect.ps1"],
+                              detect_command],
                              stdout=sys.stdout)
     else:
         p = subprocess.Popen(detect_command, shell=True, executable='/bin/bash', stdout=subprocess.PIPE,
