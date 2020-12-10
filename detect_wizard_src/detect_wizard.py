@@ -1314,7 +1314,6 @@ def detector_process(folder, f):
                 if f:
                     f.write("{}\n".format(detpath))
                     count += 1
-
                 if not command_exists and missing_cmds:
                     if missing_cmds.find(" OR ") > 0:
                         missing_cmds = "(" + missing_cmds + ")"
@@ -1372,12 +1371,12 @@ def detector_process(folder, f):
         c.str_add('dep', result.outcome)
         cli_msgs_dict['dep'] += "{}\n".format(result.outcome)
 
-
-    #TODO ignore clang for applying buildless mode.
     if cmds_missing1 or cmds_missingother:
         package_managers_missing.append(cmds_missing1)
-        c.add('dep', Property('detect.detector.buildless', 'true', is_commented=True))
-        c.add('dep', Property('detect.XXXX.path', '<LOCATION>', is_commented=True))
+        if 'clang' not in cmds_missing1 and 'clang' not in cmds_missingother:
+            c.add('dep', Property('detect.detector.buildless', 'true', is_commented=True))
+            for cmd in cmds_missing_list:
+                c.add('dep', Property('detect.{}.path'.format(cmd), '<LOCATION>', is_commented=True))
 
     for cmd in detectors_list:
         if cmd in dev_dependency_pkg_managers:
