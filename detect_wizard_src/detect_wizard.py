@@ -2049,8 +2049,13 @@ def run_detect(config_file):
                      + ' --blackduck.trust.cert=true' + ' ' \
                      + ' --spring.config.location="file:' + config_file + '"'
     print("Running command: {}\n".format(detect_command))
-    p = subprocess.Popen(detect_command, shell=True, executable='/bin/bash',
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    if platform.system() == "Windows":
+        p = subprocess.Popen(["powershell.exe",
+                              "detect.ps1"],
+                             stdout=sys.stdout)
+    else:
+        p = subprocess.Popen(detect_command, shell=True, executable='/bin/bash', stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
     stdout = p.stdout
     with open(os.path.join(args.scanfolder, 'latest_detect_run.txt'), "w+") as out_file:
         out_file.write(Actionable.wl.make_table(args.sensitivity))
