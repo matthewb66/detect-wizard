@@ -109,8 +109,8 @@ buildless_mode_actionable = Actionable("Buildless Mode", {
                                        default_description="Buildless mode will NOT be used.")
 
 dev_dependencies_actionable = Actionable("Dev Dependencies", {
-    'sensitivity <= 2': ("detect.${cmd}.include.dev.dependencies: ${dev_dependency_param_pos}", "Dev dependencies WILL be used."),
-    'sensitivity > 2': ("detect.${cmd}.include.dev.dependencies: ${dev_dependency_param_neg}", "Dev dependencies WILL NOT be used.")
+    'sensitivity > 2': ("detect.${cmd}.include.dev.dependencies: ${dev_dependency_param_pos}", "Dev dependencies WILL be used."),
+    'sensitivity <= 2': ("detect.${cmd}.include.dev.dependencies: ${dev_dependency_param_neg}", "Dev dependencies WILL NOT be used.")
 })
 
 detect_docker_actionable = Actionable("Detect Docker TAR", {'sensitivity >= 3 and docker_tar_present == true':
@@ -133,7 +133,7 @@ license_search_actionable = Actionable("License Search", {'scan_focus != "s"':
                                        default_description="License search will NOT be used. ")
 
 
-dev_dependency_pkg_managers = {'packagist': True,
+dev_dependency_pkg_manager_defaults = {'packagist': True,
                                'npm': True,
                                'ruby': False}
 
@@ -1379,8 +1379,8 @@ def detector_process(folder, f):
                 c.add('dep', Property('detect.{}.path'.format(cmd), '<LOCATION>', is_commented=True))
 
     for cmd in detectors_list:
-        if cmd in dev_dependency_pkg_managers:
-            parity = dev_dependency_pkg_managers[cmd]
+        if cmd in dev_dependency_pkg_manager_defaults:
+            parity = dev_dependency_pkg_manager_defaults[cmd]
             pos_param = True
             neg_param = False
             if not parity:
