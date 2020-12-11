@@ -1380,16 +1380,16 @@ def detector_process(folder, f):
 
     for cmd in detectors_list:
         if cmd in dev_dependency_pkg_manager_defaults:
-            parity = dev_dependency_pkg_manager_defaults[cmd]
-            pos_param = True
-            neg_param = False
-            if not parity:
-                pos_param=False
-                neg_param=True
+            #parity = dev_dependency_pkg_manager_defaults[cmd]
+            #pos_param = True
+            #neg_param = False
+            #if not parity:
+            #    pos_param = False
+            #    neg_param = True
 
             dev_dep_result = dev_dependencies_actionable.test(sensitivity=args.sensitivity, cmd=cmd,
-                                                              dev_dependency_param_pos=pos_param,
-                                                              dev_dependency_param_neg=neg_param)
+                                                              dev_dependency_param_pos=True,
+                                                              dev_dependency_param_neg=False)
             if dev_dep_result.outcome != "NO-OP":
                 c.str_add('dep', dev_dep_result.outcome)
                 cli_msgs_dict['dep'] += "{}\n".format(dev_dep_result.outcome)
