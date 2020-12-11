@@ -18,6 +18,8 @@ class WizardLogger(object):
         data_rows_no_op = []
         for topic, cod_list in self._log_dict.items():
             for idx, (cause, outcome, description) in enumerate(cod_list):
+                if type(outcome) == tuple:
+                    outcome = '\n'.join(outcome)
                 if outcome == "NO-OP":
                     if idx == 0:
                         data_rows_no_op.append([topic, ', '.join(cause), description])
@@ -30,13 +32,13 @@ class WizardLogger(object):
                         data_rows.append(["", ', '.join(cause), outcome, description])
         table_pos = texttable.Texttable(max_width=120)
         table_pos.set_cols_align(["c", "c", "c", "c"])
-        table_pos.header(["Actionable", "Reason Action Taken", "Outcome", "Description"])
+        table_pos.header(["Actionable", "Reason(s) Action Taken", "Outcome", "Description"])
         table_pos.add_rows(data_rows, header=False)
         table_pos = table_pos.draw()
 
         table_neg = texttable.Texttable(max_width=120)
         table_neg.set_cols_align(["c", "c", "c"])
-        table_neg.header(["Actionable", "Reason Action NOT Taken", "Description"])
+        table_neg.header(["Actionable", "Reason(s) Action NOT Taken", "Description"])
         table_neg.add_rows(data_rows_no_op, header=False)
         table_neg = table_neg.draw()
 
