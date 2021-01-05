@@ -80,7 +80,7 @@ Selecting 'l' or 'b' will add the local copyright and license search options (`d
 Detect Wizard requires Python 3 to be installed.
 
 # INSTALLATION
-pip3 install -i https://test.pypi.org/simple/ detect-wizard==1.0b15
+pip3 install -i https://test.pypi.org/simple/ detect-wizard
 
 # DETECT WIZARD USAGE
 The Detect Wizard can be invoked with or without parameters.
