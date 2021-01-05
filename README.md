@@ -85,7 +85,7 @@ pip3 install -i https://test.pypi.org/simple/ detect-wizard
 # DETECT WIZARD USAGE
 The Detect Wizard can be invoked with or without parameters.
 
-If the scan folder is not specified or -I/- -interactive is used, then required options will be requested in interactive mode.
+If the scan folder or other required options are not specified, or `-i`/`--interactive` is used, then required options will be requested in interactive mode.
 
 The detect_advisor.py script arguments are shown below:
 
