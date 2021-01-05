@@ -89,9 +89,9 @@ The Detect Wizard can be invoked with or without parameters.
 
 If the scan folder or other required options are not specified, or `-i`/`--interactive` is used, then required options will be requested in interactive mode.
 
-The detect_advisor.py script arguments are shown below:
+The detect_wizard script arguments are shown below:
 
-    usage: detect_advisor [-h] [-b] [-i] [-s SENSITIVITY] [-f FOCUS] [-u URL]
+    usage: detect_wizard [-h] [-b] [-i] [-s SENSITIVITY] [-f FOCUS] [-u URL]
                           [-a API_TOKEN] [-n] [—no_write]
                           [--aux_write_dir AUX_WRITE_DIR] [-hp HUB_PROJECT]
                           [-hv HUB_VERSION] [scanfolder]
@@ -132,7 +132,7 @@ The scanfolder can be a relative or absolute path.
 
 The following command will request arguments interactively:
 
-    python3 -m detect-wizard
+    detect-wizard
 
 The interactive questions are shown below (set the environment variables BLACKDUCK_URL and BLACKDUCK_API_TOKEN to pre-populate these values):
 
@@ -148,7 +148,7 @@ The interactive questions are shown below (set the environment variables BLACKDU
 The following example command specifies the folder to scan and uses default values for other arguments (sensitivity = 3, scan focus = both, run Detect scan = y).
 If not specified, then the Black Duck project and version names will be determined by Synopsys Detect. For this command 
 
-    python3 -m detect-wizard /Users/myuser/myproject
+    detect-wizard /Users/myuser/myproject
 
 # SUMMARY INFO OUTPUT
 This section includes counts and size analysis for the files and folders beneath the project location.
