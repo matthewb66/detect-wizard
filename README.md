@@ -61,13 +61,15 @@ Sensitivity of 5 will configure/run a maximal scope scan using all relevant scan
 
 The full list of scan types/options by sensivity is shown below:
 
-| Sensitivity   | Dependency Scan | Dev/Test Deps | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
+| Sensitivity   | Dependency Scan | Dev/Test Deps* | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
 | :------------ | :-------------- | :------- | :------------- | :--------- | :--------- | :------- | :---------- |
 | 1             | Buildless | Excluded | No | Min depth, Std exclusions | Ignored | No | Yes |
 | 2             | Full | Excluded | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
 | 3             | Full | Included | Yes | Half max depth, Std exclusions | Not Ignored | No | Yes |
 | 4             | Full | Included | Yes + Ind Files | Half max depth, No exclusions | Not Ignored | No | Yes |
 | 5             | Full | Included | Yes + Ind Files | Max depth, No exclusions | Not Ignored | Yes if Scan Focus = l or b | Yes |
+
+* Note that the exclusion of dev/test dependencies only works for npm, packigist and ruby.
 
 ## Scan Focus
 Scan focus can be selected between `s` (for security only), `l` (for license compiance only) or `b` (for both).
