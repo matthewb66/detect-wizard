@@ -73,7 +73,7 @@ The full list of scan types/options by sensivity is shown below:
 1. 'Dev/Test Deps' is where dev dependencies in npm, packigist and ruby will be ignored or not, Test dependency exclusion is implemented for Gradle. 
 1. Dep Search 'depth' refers to the range of depths where package manager files were found in the prescan.
 1. Dep search 'exclusions' refers to whether the default folder exclusions will be applied or not (build, node_modules etc.)
-1. Duplicates ignored/ignored refers to whether large duplicate folders will be excluded from the signature scan or not.
+1. Duplicates 'ignored/not ignored' refers to whether large duplicate folders will be excluded from the signature scan or not.
 1. Split >4.5G will cause a large signature scan greater than 4.5G to be scanned offline, the json files split and then uploaded (only works when scan is performed online).
 
 ## Scan Focus
