@@ -61,7 +61,7 @@ Sensitivity of 5 will configure/run a maximal scope scan using all relevant scan
 
 The full list of scan types/options by sensivity is shown below:
 
-| Sensitivity   | Dependency Scan | Dev/Test Deps* | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
+| Sensitivity   | Dependency Scan | Dev/Test Deps | Signature Scan | Dep Search | Duplicates | Snippets | Split >4.5G |
 | :------------ | :-------------- | :------- | :------------- | :--------- | :--------- | :------- | :---------- |
 | 1             | Buildless | Excluded | No | Min depth, Std exclusions | Ignored | No | Yes |
 | 2             | Full | Excluded | Yes | Half max depth, Std exclusions | Ignored | No | Yes |
@@ -69,7 +69,12 @@ The full list of scan types/options by sensivity is shown below:
 | 4             | Full | Included | Yes + Ind Files | Half max depth, No exclusions | Not Ignored | No | Yes |
 | 5             | Full | Included | Yes + Ind Files | Max depth, No exclusions | Not Ignored | Yes if Scan Focus = l or b | Yes |
 
-* Note that the exclusion of dev/test dependencies only works for npm, packigist and ruby.
+## Notes
+1. 'Dev/Test Deps' is where dev dependencies in npm, packigist and ruby will be ignored or not, Test dependency exclusion is implemented for Gradle. 
+1. Dep Search 'depth' refers to the range of depths where package manager files were found in the prescan.
+1. Dep search 'exclusions' refers to whether the default folder exclusions will be applied or not (build, node_modules etc.)
+1. Duplicates ignored/ignored refers to whether large duplicate folders will be excluded from the signature scan or not.
+1. Split >4.5G will cause a large signature scan greater than 4.5G to be scanned offline, the json files split and then uploaded (only works when scan is performed online).
 
 ## Scan Focus
 Scan focus can be selected between `s` (for security only), `l` (for license compiance only) or `b` (for both).
@@ -82,6 +87,7 @@ Detect Wizard requires Python 3 to be installed.
 # INSTALLATION
     pip3 install libmagic
     pip3 install python-magic==0.4.15
+    (Windows only: pip install python-magic-bin==0.4.14)
     pip3 install -i https://test.pypi.org/simple/ detect-wizard
 
 # DETECT WIZARD USAGE
