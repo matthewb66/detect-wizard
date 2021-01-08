@@ -1816,24 +1816,12 @@ def get_detector_exclusion_args():
     def detector_exclusions_func():
         detector_exclusion_args = []
         detector_exclusions = ['*test*', '*samples*', '*examples*']
-        gradle_paths = []
-        gradle_test_configurations = []
-        for path in Path(os.path.abspath(args.scanfolder)).rglob('build.gradle'):
-            gradle_paths.append(path)
-
-        for p in gradle_paths:
-            with open(p, 'r') as file:
-                f = file.read()
-            # for item in re.findall("(?:testCompile|testImplementation).*'(.*)'", f):
-            for item in re.findall("(?:testsupportCompile|testsupportImplementation).*configuration:\s*'(.*)'", f):
-                gradle_test_configurations.append(item)
 
         detector_exclusion_args.append(
             'detect.detector.search.exclusion.patterns: \'{}\''.format(','.join(detector_exclusions)))
 
-        if gradle_test_configurations:
-            detector_exclusion_args.append(
-                'detect.gradle.excluded.configurations: \'{}\''.format(','.join(gradle_test_configurations)))
+        detector_exclusion_args.append(
+                'detect.gradle.excluded.configurations: *test*,*Test*')
 
         detector_exclusion_args.append('detect.maven.excluded.scopes: test')
 

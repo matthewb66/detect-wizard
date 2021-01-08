@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
     
 setuptools.setup(
     name="detect_wizard",
-    version="1.0-Beta-21",
+    version="1.0-Beta-22",
     author="Matthew Brady, Jay Ricco, Jaclyn Kaplan, Damon Weinstein",
     author_email="w3matt@gmail.com",
     description="Black Duck scanning wizard to pre-scan folders, determine optimal scan configuration and call Synopsys Detect to scan",
