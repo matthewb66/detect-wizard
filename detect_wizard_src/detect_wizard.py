@@ -14,14 +14,13 @@ import traceback
 import zipfile
 from datetime import datetime
 from math import trunc
-from pathlib import Path
 
 import magic
 from blackduck.HubRestApi import HubInstance
 
 from detect_wizard_src.Actionable import Actionable
 from detect_wizard_src.Configuration import Configuration, PropertyGroup, Property
-from detect_wizard_src.WizardLogger import WizardLogger
+from detect_wizard_src.PathTree import PathTree
 from detect_wizard_src.file_size_util import b_to_gb, b_to_mb
 from detect_wizard_src.TarExaminer import is_tar_docker
 
@@ -2025,6 +2024,10 @@ def generate_detect_config(config_file):
         f.writelines(str(c))
 
 
+def file_tree_string(start_path, max_depth=10):
+    return '\n'.join((p.displayable() for p in PathTree.make_tree(start_path, max_depth=max_depth)))
+
+
 def run_detect(config_file):
     # print out information on what the sensitivity setting is doing
     generate_detect_config(config_file)
@@ -2150,6 +2153,13 @@ def run():
     if args.scanfolder == "" or args.url is None or args.api_token is None:
         print("Black Duck server URL and API token are required\nExiting")
         sys.exit(1)
+
+    with open(os.path.join(args.scanfolder, 'detect_wizard_input.log'), "w+") as input_log_file:
+        input_log_file.write("Scan Dir: {}\n".format(args.scanfolder))
+        input_log_file.write("Sensitivity: {}\n".format(args.sensitivity))
+        input_log_file.write("Focus: {}\n".format(args.focus))
+        input_log_file.write("\nScan Folder File Tree --\n")
+        input_log_file.writelines(file_tree_string(args.scanfolder, 10))
     conffile = os.path.join(args.scanfolder, "application-project.yml")
     backup = backup_file(conffile, "project config")
     c = Configuration(conffile, [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
