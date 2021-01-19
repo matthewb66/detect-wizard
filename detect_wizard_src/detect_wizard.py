@@ -2155,7 +2155,7 @@ def run():
         input_log_file.write("Sensitivity: {}\n".format(args.sensitivity))
         input_log_file.write("Focus: {}\n".format(args.focus))
         input_log_file.write("\nScan Folder File Tree --\n")
-        for line in file_tree_string(args.scanfolder, 10):
+        for line in file_tree_string(args.scanfolder, 6):
             log_file_size = b_to_gb(os.fstat(input_log_file.fileno()).st_size)
             if log_file_size <= 1:
                 input_log_file.write(line + "\n")
