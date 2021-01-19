@@ -51,7 +51,7 @@ lic_list = ['LICENSE', 'LICENSE.txt', 'notice.txt', 'license.txt', 'license.html
 sig_scan_actionable = Actionable("Signature Scan",
                                  {'sensitivity == 1':
                                       ("detect.tools.excluded: SIGNATURE_SCAN", "Signature Scan is DISABLED")},
-                                 default_description="Signature Scan is ENABLED")
+                                 default_description="Signature Scan WILL NOT be skipped.")
 indiv_file_match_actionable = Actionable("Individual File Match",
                                          {'sensitivity >= 4':
                                               ("detect.blackduck.signature.scanner.individual.file.matching: SOURCE",
@@ -1794,10 +1794,7 @@ def interactive(scanfolder, url, api, sensitivity, focus, no_scan, project_name,
         project_version = str(get_input("Black Duck Project Version [{}]: ".format(project_version), project_version))
         scandef = "n" if no_scan else "y"
         no_scan = not get_input_yn("Run Detect scan (y/n) [{}]: ".format(scandef), scandef)
-        if str(get_input("Dissable SSL verification and automatically trust the certificate (required for self-signed certs) (y/n) [{}]: ".format(trust_cert), trust_cert)) in ('y', 'Y', 'yes', 'Yes'):
-            trust_cert = True
-        else:
-            trust_cert = False
+        trust_cert = True if str(get_input("Dissable SSL verification and automatically trust the certificate (required for self-signed certs) (y/n) [{}]: ".format(trust_cert), trust_cert)) in ('y', 'Y', 'yes', 'Yes') else False
     except:
         print("Exiting")
         return "", "", "", 0, False, ""
@@ -2033,15 +2030,11 @@ def generate_detect_config(config_file):
 
 
 def file_tree_string(start_path, max_depth=10):
-    return '\n'.join((p.displayable() for p in PathTree.make_tree(start_path, max_depth=max_depth)))
+    return (p.displayable() for p in PathTree.make_tree(start_path, max_depth=max_depth))
 
 
 def run_detect(config_file):
-    # print out information on what the sensitivity setting is doing
-    generate_detect_config(config_file)
-    config_file = config_file.replace(" ", "\ ")
 
-    print(Actionable.wl.make_table(args.sensitivity))
     detect_command = c['detect'].get_line(1).strip() + ' ' \
                      + '--spring.profiles.active=project' + ' ' \
                      + ' --spring.config.location="file:' + config_file + '"'
@@ -2169,7 +2162,15 @@ def run():
         input_log_file.write("Focus: {}\n".format(args.focus))
         input_log_file.write("Trust cert: {}\n".format(str(args.trust_cert)))
         input_log_file.write("\nScan Folder File Tree --\n")
-        input_log_file.writelines(file_tree_string(args.scanfolder, 10))
+        for line in file_tree_string(args.scanfolder, 6):
+            log_file_size = b_to_gb(os.fstat(input_log_file.fileno()).st_size)
+            if log_file_size <= 1:
+                input_log_file.write(line + "\n")
+                input_log_file.flush()
+            else:
+                input_log_file.write("----> INPUT LOG FILE TRUNCATED FOR REACHING 1 GB. <----\n")
+                break
+
     conffile = os.path.join(args.scanfolder, "application-project.yml")
     backup = backup_file(conffile, "project config")
     c = Configuration(conffile, [PropertyGroup('detect', 'DETECT COMMAND TO RUN'),
@@ -2283,6 +2284,10 @@ def run():
 
     output_config(conffile, c)
     if not args.no_scan:
+        # print out information on what the sensitivity setting is doing
+        generate_detect_config(conffile)
+        config_file = conffile.replace(" ", "\ ")
+        print(Actionable.wl.make_table(args.sensitivity))
         run_detect(conffile)
 
     if args.bdignore:
