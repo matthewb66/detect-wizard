@@ -477,6 +477,7 @@ parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only creat
 #parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
 parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
 parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
+parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert")
 args = parser.parse_args()
 
 
@@ -1397,7 +1398,10 @@ def detector_process(folder, f):
                 c.str_add('dep', prop, is_commented=True)
             cli_msgs_dict['dep'] += " For {}:\n".format(cmd) + detector_cli_options_dict[cmd]
         if cmd in detector_cli_required_dict.keys():
-            cli_msgs_dict['crit'] += " For {}:\n".format(cmd) + detector_cli_required_dict[cmd]
+            if 'crit' in cli_msgs_dict:
+                cli_msgs_dict['crit'] += " For {}:\n".format(cmd) + detector_cli_required_dict[cmd]
+            else:
+                cli_msgs_dict['crit'] = " For {}:\n".format(cmd) + detector_cli_required_dict[cmd]
             for prop in detector_cli_required_dict[cmd].splitlines(keepends=False):
                 c.str_add('dep', prop, is_commented=True)
 
@@ -1766,7 +1770,7 @@ def backup_file(filename, filetype):
     return None
 
 
-def interactive(scanfolder, url, api, sensitivity, focus, no_scan, project_name, project_version):
+def interactive(scanfolder, url, api, sensitivity, focus, no_scan, project_name, project_version, trust_cert):
     if scanfolder is None or scanfolder == "":
         scanfolder = os.getcwd()
     try:
@@ -1790,10 +1794,14 @@ def interactive(scanfolder, url, api, sensitivity, focus, no_scan, project_name,
         project_version = str(get_input("Black Duck Project Version [{}]: ".format(project_version), project_version))
         scandef = "n" if no_scan else "y"
         no_scan = not get_input_yn("Run Detect scan (y/n) [{}]: ".format(scandef), scandef)
+        if str(get_input("Dissable SSL verification and automatically trust the certificate (required for self-signed certs) (y/n) [{}]: ".format(trust_cert), trust_cert)) in ('y', 'Y', 'yes', 'Yes'):
+            trust_cert = True
+        else:
+            trust_cert = False
     except:
         print("Exiting")
         return "", "", "", 0, False, ""
-    return scanfolder, url, api, sensitivity, focus, no_scan, project_name, project_version
+    return scanfolder, url, api, sensitivity, focus, no_scan, project_name, project_version, trust_cert
 
 
 def get_detector_search_depth():
@@ -2036,13 +2044,12 @@ def run_detect(config_file):
     print(Actionable.wl.make_table(args.sensitivity))
     detect_command = c['detect'].get_line(1).strip() + ' ' \
                      + '--spring.profiles.active=project' + ' ' \
-                     + ' --blackduck.trust.cert=true' + ' ' \
                      + ' --spring.config.location="file:' + config_file + '"'
+
     print("Running command: {}\n".format(detect_command))
     if platform.system() == "Windows":
         detect_command = 'powershell "[Net.ServicePointManager]::SecurityProtocol = \'tls12\'; irm https://detect.synopsys.com/detect.ps1?$(Get-Random) | iex; detect"' + ' ' \
                      + '--spring.profiles.active=project' + ' ' \
-                     + ' --blackduck.trust.cert=true' + ' ' \
                      + ' --spring.config.location="file:' + config_file + '"'
 
         p = subprocess.Popen(["powershell.exe",
@@ -2087,7 +2094,7 @@ def run_detect(config_file):
             json_lst = json_splitter(json_file)
 
             with open('.restconfig.json', 'w') as f:
-                json_data = {"baseurl": args.url, "api_token": args.api_token, "insecure": True, "debug": False}
+                json_data = {"baseurl": args.url, "api_token": args.api_token, "insecure": args.trust_cert, "debug": False}
                 json.dump(json_data, f)
             hub = HubInstance()
             print("Will upload 1 bdio file and {} json files".format(str(len(json_lst))))
@@ -2143,12 +2150,14 @@ def run():
         args.hub_project = None
     if args.hub_version is None:
         args.hub_version = None
+    if args.trust_cert is None:
+        args.trust_cert = "n"
 
     if args.scanfolder == "" or args.interactive or args.url is None or args.api_token is None:
         args.scanfolder, args.url, args.api_token, args.sensitivity, args.focus, args.no_scan, \
-        args.hub_project, args.hub_version \
+        args.hub_project, args.hub_version, args.trust_cert \
             = interactive(args.scanfolder, args.url, args.api_token, args.sensitivity, args.focus, args.no_scan,
-                          args.hub_project, args.hub_version)
+                          args.hub_project, args.hub_version, args.trust_cert)
 
     if args.scanfolder == "" or args.url is None or args.api_token is None:
         print("Black Duck server URL and API token are required\nExiting")
@@ -2158,6 +2167,7 @@ def run():
         input_log_file.write("Scan Dir: {}\n".format(args.scanfolder))
         input_log_file.write("Sensitivity: {}\n".format(args.sensitivity))
         input_log_file.write("Focus: {}\n".format(args.focus))
+        input_log_file.write("Trust cert: {}\n".format(str(args.trust_cert)))
         input_log_file.write("\nScan Folder File Tree --\n")
         input_log_file.writelines(file_tree_string(args.scanfolder, 10))
     conffile = os.path.join(args.scanfolder, "application-project.yml")
@@ -2204,7 +2214,8 @@ def run():
 
     c.str_add('reqd', "--blackduck.url={}\n".format(args.url), should_update=True)
     c.str_add('reqd', "--blackduck.api.token={}\n".format(args.api_token), should_update=True)
-    # cli_msgs_dict['reqd'] = "--blackduck.url={}\n".format(args.url) + "--blackduck.api.token=API_TOKEN\n"
+    if args.trust_cert:
+        c.str_add('reqd', "--blackduck.trust.cert=true\n")
 
     if not os.path.isdir(args.scanfolder):
         print("Scan location '{}' does not exist\nExiting".format(args.scanfolder))
