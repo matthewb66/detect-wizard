@@ -24,7 +24,7 @@ class PathTree(object):
         out_str = self.path.name
         if self.path.is_dir():
             out_str += '/'  # add directory /
-        return out_str + ("   -- Max Depth Reached" if self.depth == self.max_depth else "")
+        return out_str + ("   -- Max depth ({}) for scan-input logfile reached. ".format(self.max_depth) if self.depth == self.max_depth else "")
 
     @classmethod
     def make_tree(cls, root, max_depth=6, parent=None, is_last=False):
