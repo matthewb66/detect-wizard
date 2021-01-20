@@ -478,6 +478,8 @@ parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only creat
 parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
 parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
 parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert")
+parser.add_argument('-bdba', '--binary', help="Enable BDBA integration in detect scan (If license is available).",
+                    action='store_true')
 args = parser.parse_args()
 
 
@@ -1201,7 +1203,7 @@ def signature_process(folder, f):
     else:
         bin_pack_name = None
     result = binary_matching_actionable.test(sensitivity=args.sensitivity, num_binaries=len(binzip_list),
-                                             bin_pack_name=bin_pack_name, no_write=False)
+                                             bin_pack_name=bin_pack_name, no_write=False, bdba_enable=args.binary)
     if result.outcome != "NO-OP":
         c.str_add('size', result.outcome)
 
@@ -2145,6 +2147,8 @@ def run():
         args.hub_version = None
     if args.trust_cert is None:
         args.trust_cert = "n"
+    if args.binary is None:
+        args.binary = False
 
     if args.scanfolder == "" or args.interactive or args.url is None or args.api_token is None:
         args.scanfolder, args.url, args.api_token, args.sensitivity, args.focus, args.no_scan, \
