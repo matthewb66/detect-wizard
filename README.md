@@ -129,7 +129,7 @@ The detect_wizard script arguments are shown below:
                             Hub Project Version
       -t TRUST_CERT, --trust_cert TRUST_CERT
                             Automatically trust Black Duck cert
-      -bdba, --binary       Enable BDBA integration in detect scan (If license is available).
+      -bdba, --binary       Upload binary files for binary scan is sensitivity>=4
 
 If scanfolder is not specified then all required options will be requested interactively (alternatively use -i or --interactive option to run interactive 
 mode). Enter q or use CTRL-C to terminate interactive entry and the program. Special characters such as ~ or environment variables such as $HOME are not 
