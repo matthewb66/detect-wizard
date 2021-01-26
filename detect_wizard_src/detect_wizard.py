@@ -477,14 +477,13 @@ parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only creat
 #parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
 parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
 parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
-parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert")
+parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert", action='store_true')
 parser.add_argument('-bdba', '--binary', help="Enable BDBA integration in detect scan (If license is available).",
                     action='store_true')
 args = parser.parse_args()
 
 
 def process_tar_entry(tinfo: tarfile.TarInfo, tarpath, dirdepth, tar):
-    print("ENTRY:" + tarpath + "##" + tinfo.name)
     fullpath = tarpath + "##" + tinfo.name
     odir = tinfo.name
     dir = os.path.dirname(tinfo.name)
@@ -1158,7 +1157,7 @@ def signature_process(folder, f):
     if retval.outcome != "NO-OP":
         use_json_splitter = True
         for property in retval.outcome:
-            print(property)
+            c.str_add('size', property)
 
     if sizes['file'][notinarc] + sizes['arc'][notinarc] > 2000000000:
         recs_msgs_dict['imp'] += "- IMPORTANT: Overall scan size ({:>,d} MB) is large\n".format(
