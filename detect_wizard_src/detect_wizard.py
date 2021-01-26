@@ -477,7 +477,7 @@ parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only creat
 #parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
 parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
 parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
-parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert", action='store_true')
+parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert")
 parser.add_argument('-bdba', '--binary', help="Enable BDBA integration in detect scan (If license is available).",
                     action='store_true')
 args = parser.parse_args()
