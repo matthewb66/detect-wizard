@@ -1,6 +1,6 @@
 # Synopsys Detect Wizard (detect-wizard)
 
-Black Duck scanning wizard to pre-scan folders, determine optimal scan configuration and call Synopsys Detect to scan
+Black Duck scanning wizard to pre-scan folders, determine and output optimal scan configuration in YML files and optionally call Synopsys Detect to perform scan
 
 # INTRODUCTION
 
@@ -27,7 +27,7 @@ The Detect Wizard uses several inputs by default including:
 - Black Duck Project version (default none)
 
 These values can be specified as arguments, or will be requested in an interactive mode if not supplied. Server URL and API key will also be picked up 
-from standard Detect environment variables if set in the environment.
+from standard Detect environment variables (BLACKDUCK_URL and BLACKDUCK_API_TOKEN) if set in the environment.
 
 The scan sensitivity value specifies the analysis scope ranging from 1 (most accurate Bill of Materials with minimal false positives – but with the potential 
 to miss some OSS components) to 5 (most comprehensive analysis to identify as many OSS components as possible but with the potential for many false positives). See the section `Scan Sensitivity` below.
@@ -40,7 +40,7 @@ currently expanded by Detect Wizard (although they will be expanded by Synopsys 
 Based on the specified sensitivity and scan type, it will identify Detect options which are relevant to the scanned project and determine suitable settings 
 to support the level of scan required.
 
-It will export a .yml file for use in Detect scans later, and will optionally call Detect directly to run the scan.
+It will export a .yml file for use in Detect scans, and will optionally call Detect directly to run the scan.
 
 # CONTROLLING THE LEVEL OF SCAN USING THE WIZARD
 
@@ -100,7 +100,7 @@ The detect_wizard script arguments are shown below:
     usage: detect_wizard [-h] [-b] [-i] [-s SENSITIVITY] [-f FOCUS] [-u URL]
                           [-a API_TOKEN] [-n] [—no_write]
                           [--aux_write_dir AUX_WRITE_DIR] [-hp HUB_PROJECT]
-                          [-hv HUB_VERSION] [scanfolder]
+                          [-hv HUB_VERSION] [-t TRUST_CERT] [-bdba] [scanfolder]
 
     Check prerequisites for Detect, scan folders, configure and run Synopsys Detect
 
@@ -120,19 +120,24 @@ The detect_wizard script arguments are shown below:
       -a API_TOKEN, --api_token API_TOKEN
                             Black Duck Server API Token
       -n, --no_scan         Do not run Detect scan - only create .yml project config file
-      --no_write            Do not add files to scan directory.
+      --no_write            Do not write to scan directory (log files and binary zip archive for example).
       --aux_write_dir AUX_WRITE_DIR
-                            Directory to write intermediate files (default XXXX)
+                            Directory to write intermediate files (default is the project top-level folder)
       -hp HUB_PROJECT, --hub_project HUB_PROJECT
                             Hub Project Name
       -hv HUB_VERSION, --hub_version HUB_VERSION
                             Hub Project Version
+      -t TRUST_CERT, --trust_cert TRUST_CERT
+                            Automatically trust Black Duck cert
+      -bdba, --binary       Upload binary files for binary scan is sensitivity>=4
 
 If scanfolder is not specified then all required options will be requested interactively (alternatively use -i or --interactive option to run interactive 
 mode). Enter q or use CTRL-C to terminate interactive entry and the program. Special characters such as ~ or environment variables such as $HOME are not 
 supported in interactive mode. Default values will be identified from the environment variables BLACKDUCK_URL or BLACKDUCK_API_TOKEN if set in the environment.
 
 The scanfolder can be a relative or absolute path.
+
+The -bdba or --binary options with Sensitivity>=4 will cause Detect Wizard to zip binary files (.dll .obj .o .a .lib .iso .qcow2 .vmdk .vdi .ova .nbi .vib .exe .img .bin .apk .aac .ipa .msi) within the project hierarchy into a new archive and upload for binary scanning.
 
 # EXAMPLE USAGE
 
@@ -149,7 +154,8 @@ The interactive questions are shown below (set the environment variables BLACKDU
     Scan Focus (License Compliance (l) / Security (s) / Both (b)) [b]: 
     Hub Project Name [None]:
     Hub Project Version [None]:
-    Run Detect scan (y/n) [y]: 
+    Run Detect scan (y/n) [y]:
+    Disable SSL verification and automatically trust the certificate (required for self-signed certs) (y/n) [n]:
 
 The following example command specifies the folder to scan and uses default values for other arguments (sensitivity = 3, scan focus = both, run Detect scan = y).
 If not specified, then the Black Duck project and version names will be determined by Synopsys Detect. For this command 
@@ -264,10 +270,15 @@ The first table shows the options which will be applied (or the default option o
 
 If the `Run Detect Scan` option is specified (or the `-n` or `--no_scan` option is specified), then Detect Wizard will call the standard Synopsys Detect to run the scan using the options generated by the Wizard.
 
-# OUTPUT CONFIG FILES
-The file application-project.yml will be created in the project folder if it does not already exist. If the file already exists it will be renamed first. 
+# OUTPUT FILES
+
+The file `application-project.yml` will be created in the project folder if it does not already exist. If the file already exists it will be renamed first. 
 The application-project.yml config file can be used to configure Synopsys Detect using the single `--spring.profiles.active=project` option.
 
-The -b or --bdignore option will create multiple .bdignore files in sub-folders beneath the project folder if they do not already exist. The .bdignore files 
+The file `detect_wizard_input.log` will be created containing the input values supplied to Detect Wizard and a tree view of all files in the project; useful for debugging. 
+
+The file `latest_detect_run.txt will` contain the console output of Detect Wizard including the Synopsys Detect log.
+
+The `-b` or `--bdignore` option will create multiple .bdignore files in sub-folders beneath the project folder if they do not already exist. The .bdignore files 
 will be created in parent folders of duplicate folders or those containing only binary files for exclusion. USE WITH CAUTION as it will cause specified folders 
 to be permanently ignored by the Signature scan until the .bdignore files are removed.
