@@ -3,6 +3,7 @@ import atexit
 import glob
 import io
 import json
+import logging
 import os
 import platform
 import re
@@ -45,6 +46,31 @@ supported_tar_list = ['.tar', '.tar.gz', '.tar.bz']
 dockerext_list = ['.tar', '.gz']
 pkgext_list = ['.rpm', '.deb', '.dmg']
 lic_list = ['LICENSE', 'LICENSE.txt', 'notice.txt', 'license.txt', 'license.html', 'NOTICE', 'NOTICE.txt']
+
+# TODO: Use defaults to avoid having to do args machinations later in the code?
+
+parser = argparse.ArgumentParser(
+    description='Check prerequisites for Detect, scan folders, configure and run Synopsys Detect', prog='detect_wizard')
+parser.add_argument("scanfolder", nargs="?", help="Project folder to analyse", default="")
+parser.add_argument("-b", "--bdignore", help="Create .bdignore files in sub-folders to exclude folders from scan",
+                    action='store_true')
+parser.add_argument("-i", "--interactive", help="Use interactive mode to review/set options", action='store_true')
+parser.add_argument("-s", "--sensitivity",
+                    help="Coverage/sensitivity - 1 = dependency scan only & limited FPs, 5 = all scan types including all potential matches")
+parser.add_argument("-f", "--focus", help="Scan focus of License Compliance (l) / Security (s) / Both (b)")
+parser.add_argument("-u", "--url", help="Black Duck Server URL")
+parser.add_argument("-a", "--api_token", help="Black Duck Server API Token")
+parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only create .yml project config file",
+                    action='store_true')
+#parser.add_argument('--no_write', help="Do not add files to scan directory.", action='store_true')
+#parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
+parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
+parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
+parser.add_argument('-t', '--trust_cert', action='store_true', help="Automatically trust Black Duck cert")
+parser.add_argument('-bdba', '--binary', help="Enable BDBA integration in detect scan (If license is available).",
+                    action='store_true')
+parser.add_argument('-sz', '--scan_size_limit', default="4.5", help="Set the per-scan size limit. Good for use in testing with smaller size test projects.")
+args = parser.parse_args()
 
 
 # Sets Sig scan
@@ -117,7 +143,7 @@ detect_docker_actionable = Actionable("Detect Docker TAR", {'sensitivity >= 3 an
                                                                  "Docker Layer detection WILL be used on ${docker_tar}.")},
                                       default_description="Docker Layer Detection will NOT be used.")
 
-json_splitter_actionable = Actionable("Scanfile Splitter", {'sensitivity > 1 and scan_size >= 4.5':
+json_splitter_actionable = Actionable("Scanfile Splitter", {f'sensitivity > 1 and scan_size >= {args.scan_size_limit}':
                                                                 (("blackduck.offline.mode: true",
                                                                   "detect.bom.aggregate.name: detect_advisor_run_{}".format(
                                                                       datetime.now())),
@@ -459,28 +485,6 @@ cli_msgs_dict['rep'] = "--detect.wait.for.results=true\n" + \
                        "--detect.report.timeout=XXX\n" + \
                        "    (OPTIONAL Amount of time in seconds Detect will wait for scans to finish and to generate reports (default 300).\n" + \
                        "    300 seconds may be sufficient, but very large scans can take up to 20 minutes (1200 seconds) or longer)\n"
-
-parser = argparse.ArgumentParser(
-    description='Check prerequisites for Detect, scan folders, configure and run Synopsys Detect', prog='detect_wizard')
-parser.add_argument("scanfolder", nargs="?", help="Project folder to analyse", default="")
-parser.add_argument("-b", "--bdignore", help="Create .bdignore files in sub-folders to exclude folders from scan",
-                    action='store_true')
-parser.add_argument("-i", "--interactive", help="Use interactive mode to review/set options", action='store_true')
-parser.add_argument("-s", "--sensitivity",
-                    help="Coverage/sensitivity - 1 = dependency scan only & limited FPs, 5 = all scan types including all potential matches")
-parser.add_argument("-f", "--focus", help="Scan focus of License Compliance (l) / Security (s) / Both (b)")
-parser.add_argument("-u", "--url", help="Black Duck Server URL")
-parser.add_argument("-a", "--api_token", help="Black Duck Server API Token")
-parser.add_argument("-n", "--no_scan", help="Do not run Detect scan - only create .yml project config file",
-                    action='store_true')
-#parser.add_argument('--no_write', help="Do not add files to scan directory.", action='store_true')
-#parser.add_argument('--aux_write_dir', help="Directory to write intermediate files (default XXXX)")
-parser.add_argument('-hp', '--hub_project', help="Hub Project Name")
-parser.add_argument('-hv', '--hub_version', help="Hub Project Version")
-parser.add_argument('-t', '--trust_cert', help="Automatically trust Black Duck cert")
-parser.add_argument('-bdba', '--binary', help="Enable BDBA integration in detect scan (If license is available).",
-                    action='store_true')
-args = parser.parse_args()
 
 
 def process_tar_entry(tinfo: tarfile.TarInfo, tarpath, dirdepth, tar):
@@ -2035,13 +2039,19 @@ def file_tree_string(start_path, max_depth=10):
 
 
 def run_detect(config_file):
+    global use_json_splitter
 
-    detect_command = c['detect'].get_line(1).strip() + ' ' \
-                     + '--spring.profiles.active=project' + ' ' \
-                     + ' --spring.config.location="file:' + config_file + '"'
+    # detect_command = c['detect'].get_line(1).strip() + ' ' \
+    #                  + '--spring.profiles.active=project' + ' ' \
+    #                  + ' --spring.config.location="file:' + config_file + '"'
+
+    detect_command = c['detect'].get_line(1).strip()
+    detect_command = f'{detect_command} --spring.profiles.active=project --spring.config.location="file:{config_file}"'
+    detect_command = f'{detect_command} {os.environ.get("DETECT_OPTIONS")}'
 
     print("Running command: {}\n".format(detect_command))
     if platform.system() == "Windows":
+        # TODO: add ability to provide user-supplied options
         detect_command = 'powershell "[Net.ServicePointManager]::SecurityProtocol = \'tls12\'; irm https://detect.synopsys.com/detect.ps1?$(Get-Random) | iex; detect"' + ' ' \
                      + '--spring.profiles.active=project' + ' ' \
                      + ' --spring.config.location="file:' + config_file + '"'
@@ -2069,6 +2079,7 @@ def run_detect(config_file):
     detect_status = re.search(r'Overall Status: (.*)\n', file_contents)
     bom_location = re.search(r'Black Duck Project BOM: (.*)\n', file_contents)
 
+    # logging.debug(f"use_json_splitter: {use_json_splitter}")
     if use_json_splitter:
         print("Using JSON splitter")
         # upload scan files
@@ -2087,10 +2098,12 @@ def run_detect(config_file):
 
             json_lst = json_splitter(json_file)
 
-            with open('.restconfig.json', 'w') as f:
-                json_data = {"baseurl": args.url, "api_token": args.api_token, "insecure": args.trust_cert, "debug": False}
-                json.dump(json_data, f)
-            hub = HubInstance()
+            # with open('.restconfig.json', 'w') as f:
+            #     json_data = {"baseurl": args.url, "api_token": args.api_token, "insecure": args.trust_cert, "debug": False}
+            #     json.dump(json_data, f)
+
+            hub = HubInstance(args.url, api_token = args.api_token, insecure = args.trust_cert, write_config_flag = False)
+
             print("Will upload 1 bdio file and {} json files".format(str(len(json_lst))))
             hub.upload_scan(bdio_file)
             print("Uploaded bdio file: {}".format(bdio_file))
@@ -2124,20 +2137,27 @@ def cleanup():
         pass
 
 
+use_json_splitter = False
 def run():
 
     global c
+    global use_json_splitter
 
     if os.environ.get('BLACKDUCK_URL') != "" and args.url is None:
         args.url = os.environ.get('BLACKDUCK_URL')
     if os.environ.get('BLACKDUCK_API_TOKEN') != "" and args.api_token is None:
         args.api_token = os.environ.get('BLACKDUCK_API_TOKEN')
+
+    # TODO: Consider using argparse defaults to avoid all this, e.g. set default for sensitivity to 3, type=int?
     if args.sensitivity is None:
         args.sensitivity = 3
     else:
         args.sensitivity = int(args.sensitivity)
+
+    # TODO: Consider using argparse defaults to avoid all this, e.g. set default for focus="b"?
     if args.focus is None:
         args.focus = "b"
+    # TODO: Consider using argparse defaults to avoid all this, e.g. set default for no_scan=False?
     if args.no_scan is None:
         args.no_scan = False
     if args.hub_project is None:
@@ -2264,6 +2284,7 @@ def run():
     #     if not args.docker_only:
     #         use_json_splitter = signature_process(args.scanfolder, f)
     use_json_splitter = signature_process(args.scanfolder, f)
+    # logging.debug(f"use_json_splitter (after initial assignment): {use_json_splitter}")
 
     print_summary(False, f)
 
@@ -2291,6 +2312,7 @@ def run():
         generate_detect_config(conffile)
         config_file = conffile.replace(" ", "\ ")
         print(Actionable.wl.make_table(args.sensitivity))
+        # logging.debug(f"use_json_splitter (before run_detect): {use_json_splitter}")
         run_detect(conffile)
 
     if args.bdignore:
@@ -2298,4 +2320,9 @@ def run():
 
 
 if __name__ == "__main__":
+    # logging.basicConfig(format='%(asctime)s:%(levelname)s:%(message)s', stream=sys.stderr, level=logging.DEBUG)
+    # logging.getLogger("requests").setLevel(logging.WARNING)
+    # logging.getLogger("urllib3").setLevel(logging.WARNING)
+    # logging.getLogger("blackduck").setLevel(logging.WARNING)
+
     run()
